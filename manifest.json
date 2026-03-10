@@ -1,24 +1,38 @@
 {
-  "manifest_version": 3,
-  "name": "My Chrome Extension",
-  "version": "1.0",
-  "description": "A basic Chrome extension template.",
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "Open Popup"
-  },
-  "background": {
-    "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ]
+    "manifest_version": 3,
+    "name": "NOCAP - Fake News Detector",
+    "version": "1.0",
+    "description": "On-device AI credibility indicator for YouTube videos.",
+    "action": {
+        "default_title": "Open NOCAP"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.youtube.com/watch*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "shadow-ui.js"
+            ],
+            "matches": [
+                "*://*.youtube.com/*"
+            ]
+        }
+    ],
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting"
+    ]
 }
