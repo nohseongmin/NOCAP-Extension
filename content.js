@@ -3,37 +3,62 @@
 console.log('NOCAP: Content script loaded. Injecting UI element directly...');
 
 function injectUI() {
-    if (document.getElementById('nocap-extension-root')) return;
+  if (document.getElementById('nocap-extension-root')) return;
 
-    const container = document.createElement('div');
-    container.id = 'nocap-extension-root';
+  const container = document.createElement('div');
+  container.id = 'nocap-extension-root';
 
-    // 유튜브 Z-index 간섭 방지 (항상 최상단)
-    container.style.position = 'fixed';
-    container.style.top = '20px';
-    container.style.right = '20px';
-    container.style.zIndex = '9999999';
+  // 유튜브 Z-index 간섭 방지 (항상 최상단)
+  container.style.position = 'fixed';
+  container.style.top = '20px';
+  container.style.right = '20px';
+  container.style.zIndex = '9999999';
+  // SPA 네비게이션 시 포인터 이벤트 허용 확인
+  container.style.pointerEvents = 'auto';
 
-    const shadowRoot = container.attachShadow({ mode: 'open' });
+  const shadowRoot = container.attachShadow({ mode: 'open' });
 
-    // 초기 렌더링 호출
-    renderUI(shadowRoot, false);
+  // 초기 렌더링 호출
+  renderUI(shadowRoot, false);
 
-    document.body.appendChild(container);
+  document.body.appendChild(container);
+}
+
+// DOM 엘리먼트 생성 헬퍼 함수 (innerHTML 우회)
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  if (props) {
+    for (const [key, val] of Object.entries(props)) {
+      if (key === 'className') el.className = val;
+      else if (key === 'id') el.id = val;
+      else if (key === 'style') el.style.cssText = val;
+      else el.setAttribute(key, val);
+    }
+  }
+  children.forEach(child => {
+    if (!child && child !== 0) return;
+    if (typeof child === 'string' || typeof child === 'number') {
+      el.appendChild(document.createTextNode(child));
+    } else if (Array.isArray(child)) {
+      child.forEach(c => c && el.appendChild(c));
+    } else {
+      el.appendChild(child);
+    }
+  });
+  return el;
 }
 
 function renderUI(shadowRoot, isPremium) {
-    const score = 45;
-    const color = '#fbbf24'; // Yellow
-    const conclusion = "영상의 주장은 일부 사실이나, 선동적인 어휘와 확증 편향적 근거가 혼재되어 있습니다.";
-    const reasoning = [
-        { type: "penalty", text: "로컬 AI 문맥 분석 결과 '분노', '배신' 등 감정적 어휘 빈도 12%로 높음 (-15점)" },
-        { type: "fact", text: "구글 팩트체크 API 결과, 2분 10초 발언은 Snopes에서 '거짓(False)' 판정 (-35점)" },
-        { type: "bonus", text: "해당 채널은 과거 허위 조작 정보 이력이 없음 (+5점)" }
-    ];
+  const score = 45;
+  const color = '#fbbf24'; // Yellow
+  const conclusion = "영상의 주장은 일부 사실이나, 선동적인 어휘와 확증 편향적 근거가 혼재되어 있습니다.";
+  const reasoning = [
+    { type: "penalty", text: "로컬 AI 문맥 분석 결과 '분노', '배신' 등 감정적 어휘 빈도 12%로 높음 (-15점)" },
+    { type: "fact", text: "구글 팩트체크 API 결과, 2분 10초 발언은 Snopes에서 '거짓(False)' 판정 (-35점)" },
+    { type: "bonus", text: "해당 채널은 과거 허위 조작 정보 이력이 없음 (+5점)" }
+  ];
 
-    const style = `
-    <style>
+  const styleContent = `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
       
       :host {
@@ -104,7 +129,6 @@ function renderUI(shadowRoot, isPremium) {
         position: relative;
       }
 
-      /* 링 애니메이션 및 색상 */
       .score-circle::before {
         content: '';
         position: absolute;
@@ -135,7 +159,6 @@ function renderUI(shadowRoot, isPremium) {
         gap: 10px;
       }
 
-      /* 상세 근거 리스트 */
       .reason-item {
         font-size: 12px;
         color: #a1a1aa;
@@ -147,7 +170,6 @@ function renderUI(shadowRoot, isPremium) {
         flex-shrink: 0;
       }
 
-      /* 프리미엄 블러 효과 */
       .premium-blur {
         filter: blur(5px);
         user-select: none;
@@ -189,70 +211,63 @@ function renderUI(shadowRoot, isPremium) {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
       }
-    </style>
-  `;
+    `;
 
-    const reasonsHtml = reasoning.map(r =>
-        `<div class="reason-item">
-      <span>${r.type === 'penalty' || r.type === 'fact' ? '🚨' : '✅'}</span>
-      ${r.text}
-    </div>`
-    ).join('');
+  // shadowRoot 초기화
+  while (shadowRoot.firstChild) {
+    shadowRoot.removeChild(shadowRoot.firstChild);
+  }
 
-    const html = `
-    <div class="nocap-widget">
-      <div class="header">
-        <div class="logo">NOCAP 진위 판독기</div>
-        <button class="toggle-btn" id="devToggle">
-          ${isPremium ? 'PRO 모드' : 'BASIC 모드'} (테스트)
-        </button>
-      </div>
+  // 스타일 엘리먼트 생성
+  const styleEl = document.createElement('style');
+  styleEl.textContent = styleContent;
+  shadowRoot.appendChild(styleEl);
 
-      <div class="score-container">
-        <div class="score-circle" style="color: ${color}">
-          ${score}%
-        </div>
-        <div class="conclusion">${conclusion}</div>
-      </div>
+  // 상세 팩트체크 리스트
+  const reasonsNodes = reasoning.map(r =>
+    h('div', { className: 'reason-item' },
+      h('span', {}, (r.type === 'penalty' || r.type === 'fact') ? '🚨' : '✅'),
+      r.text
+    )
+  );
 
-      <div class="details-section">
-        <div class="${isPremium ? '' : 'premium-blur'}">
-          <div style="font-size: 11px; color:#71717a; margin-bottom: 8px; font-weight:600;">상세 팩트체크 근거</div>
-          ${reasonsHtml}
-        </div>
-        
-        ${!isPremium ? `
-          <div class="premium-overlay">
-            <div class="premium-lock-icon">🔒</div>
-            <button class="premium-btn">Premium 잠금 해제</button>
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
+  // 전체 UI 위젯 트리 생성
+  const nocapWidget = h('div', { className: 'nocap-widget' },
+    // Header
+    h('div', { className: 'header' },
+      h('div', { className: 'logo' }, 'NOCAP 진위 판독기'),
+      h('button', { className: 'toggle-btn', id: 'devToggle' },
+        isPremium ? 'PRO 모드 (테스트)' : 'BASIC 모드 (테스트)'
+      )
+    ),
+    // Score Container
+    h('div', { className: 'score-container' },
+      h('div', { className: 'score-circle', style: 'color: ' + color }, score + '%'),
+      h('div', { className: 'conclusion' }, conclusion)
+    ),
+    // Details Section
+    h('div', { className: 'details-section' },
+      h('div', { className: isPremium ? '' : 'premium-blur' },
+        h('div', { style: 'font-size: 11px; color:#71717a; margin-bottom: 8px; font-weight:600;' }, '상세 팩트체크 근거'),
+        ...reasonsNodes
+      ),
+      !isPremium ? h('div', { className: 'premium-overlay' },
+        h('div', { className: 'premium-lock-icon' }, '🔒'),
+        h('button', { className: 'premium-btn' }, 'Premium 잠금 해제')
+      ) : null
+    )
+  );
 
-    let combinedHtml = style + html;
+  shadowRoot.appendChild(nocapWidget);
 
-    // 유튜브의 TrustedTypes 보안 정책 통과를 위한 커스텀 Policy 생성
-    if (window.trustedTypes && window.trustedTypes.createPolicy) {
-        try {
-            const policy = window.trustedTypes.createPolicy('nocap-policy', {
-                createHTML: (string) => string
-            });
-            combinedHtml = policy.createHTML(combinedHtml);
-        } catch (e) {
-            console.warn("NOCAP: TrustedTypes policy creation failed:", e);
-        }
-    }
-
-    shadowRoot.innerHTML = combinedHtml;
-
-    // 이벤트 리스너 다시 등록 (innerHTML 덮어쓰기 때문)
-    shadowRoot.getElementById('devToggle').addEventListener('click', () => {
-        // 상태 토글 후 다시 렌더링
-        renderUI(shadowRoot, !isPremium);
-    });
+  // 이벤트 리스너 등록
+  shadowRoot.getElementById('devToggle').addEventListener('click', () => {
+    renderUI(shadowRoot, !isPremium);
+  });
 }
 
-// 스크립트 실행
+// 유튜브 SPA 네비게이션 감지 이벤트 리스너
+document.addEventListener('yt-navigate-finish', injectUI);
+
+// 스크립트 최초 실행
 injectUI();
