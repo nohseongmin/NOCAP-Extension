@@ -32,6 +32,9 @@ function h(tag, props, ...children) {
       if (key === 'className') el.className = val;
       else if (key === 'id') el.id = val;
       else if (key === 'style') el.style.cssText = val;
+      else if (key.startsWith('on') && typeof val === 'function') {
+        el.addEventListener(key.substring(2).toLowerCase(), val);
+      }
       else el.setAttribute(key, val);
     }
   }
@@ -47,6 +50,9 @@ function h(tag, props, ...children) {
   });
   return el;
 }
+
+// 위젯 축소/확장 상태 관리용 전역 변수
+let isWidgetCollapsed = false;
 
 function renderUI(shadowRoot, isPremium) {
   const score = 45;
@@ -79,14 +85,46 @@ function renderUI(shadowRoot, isPremium) {
         display: flex;
         flex-direction: column;
         gap: 16px;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         overflow: hidden;
+      }
+      
+      /* 숨겨진 상태일 때 */
+      .nocap-widget.collapsed {
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border-radius: 24px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: rgba(18, 18, 20, 0.6);
+      }
+      .nocap-widget.collapsed > *:not(.collapsed-icon) {
+        display: none !important;
+      }
+      .collapsed-icon {
+        display: none;
+        font-size: 20px;
+        font-weight: 700;
+        background: linear-gradient(90deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .nocap-widget.collapsed .collapsed-icon {
+        display: block;
       }
 
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       .logo {
@@ -97,6 +135,18 @@ function renderUI(shadowRoot, isPremium) {
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
+
+      .close-btn {
+        background: transparent;
+        border: none;
+        color: #a1a1aa;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+      .close-btn:hover { color: white; }
 
       .toggle-btn {
         background: rgba(255,255,255,0.1);
@@ -232,11 +282,35 @@ function renderUI(shadowRoot, isPremium) {
   );
 
   // 전체 UI 위젯 트리 생성
-  const nocapWidget = h('div', { className: 'nocap-widget' },
+  const nocapWidget = h('div', {
+    className: isWidgetCollapsed ? 'nocap-widget collapsed' : 'nocap-widget',
+    title: isWidgetCollapsed ? 'NOCAP 판독기 열기' : ''
+  },
+    // 축소 아이콘 (숨김 상태일 때만 보임)
+    h('div', { className: 'collapsed-icon' }, 'N'),
+
     // Header
     h('div', { className: 'header' },
-      h('div', { className: 'logo' }, 'NOCAP 진위 판독기'),
-      h('button', { className: 'toggle-btn', id: 'devToggle' },
+      h('div', { className: 'header-left' },
+        h('button', {
+          className: 'close-btn',
+          title: '판독기 숨기기',
+          onClick: (e) => {
+            e.stopPropagation(); // 위젯 전체 클릭 방지
+            isWidgetCollapsed = true;
+            renderUI(shadowRoot, isPremium);
+          }
+        }, '×'),
+        h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
+      ),
+      h('button', {
+        className: 'toggle-btn',
+        id: 'devToggle',
+        onClick: (e) => {
+          e.stopPropagation();
+          renderUI(shadowRoot, !isPremium);
+        }
+      },
         isPremium ? 'PRO 모드 (테스트)' : 'BASIC 모드 (테스트)'
       )
     ),
@@ -253,17 +327,27 @@ function renderUI(shadowRoot, isPremium) {
       ),
       !isPremium ? h('div', { className: 'premium-overlay' },
         h('div', { className: 'premium-lock-icon' }, '🔒'),
-        h('button', { className: 'premium-btn' }, 'Premium 잠금 해제')
+        h('button', {
+          className: 'premium-btn',
+          onClick: (e) => {
+            e.stopPropagation();
+            // 테스트 단계이므로 누르면 바로 풀리도록 설정
+            renderUI(shadowRoot, true);
+          }
+        }, 'Premium 잠금 해제 (테스트)')
       ) : null
     )
   );
 
-  shadowRoot.appendChild(nocapWidget);
+  // 축소 상태일 때 위젯을 클릭하면 다시 복구
+  if (isWidgetCollapsed) {
+    nocapWidget.addEventListener('click', () => {
+      isWidgetCollapsed = false;
+      renderUI(shadowRoot, isPremium);
+    });
+  }
 
-  // 이벤트 리스너 등록
-  shadowRoot.getElementById('devToggle').addEventListener('click', () => {
-    renderUI(shadowRoot, !isPremium);
-  });
+  shadowRoot.appendChild(nocapWidget);
 }
 
 // 유튜브 SPA 네비게이션 감지 이벤트 리스너
