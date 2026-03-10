@@ -10,7 +10,7 @@ function injectUI() {
 
   // 유튜브 Z-index 간섭 방지 (항상 최상단)
   container.style.position = 'fixed';
-  container.style.top = '20px';
+  container.style.top = '80px';
   container.style.right = '20px';
   container.style.zIndex = '9999999';
   // SPA 네비게이션 시 포인터 이벤트 허용 확인
