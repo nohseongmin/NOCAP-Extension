@@ -3,9 +3,25 @@
 console.log('NOCAP: Content script loaded. Injecting UI element directly...');
 
 function injectUI() {
-  if (document.getElementById('nocap-extension-root')) return;
+  // 현재 URL이 유튜브 영상 시청 페이지(/watch)인지 확인
+  const isWatchPage = window.location.pathname === '/watch';
 
-  const container = document.createElement('div');
+  let container = document.getElementById('nocap-extension-root');
+
+  if (!isWatchPage) {
+    // 영상 시청 페이지가 아니면 UI 숨김
+    if (container) container.style.display = 'none';
+    return;
+  }
+
+  // 영상 시청 페이지라면 UI를 보이게 처리
+  if (container) {
+    container.style.display = 'block';
+    return;
+  }
+
+  // 아직 생성되지 않았다면 새로 생성
+  container = document.createElement('div');
   container.id = 'nocap-extension-root';
 
   // 유튜브 Z-index 간섭 방지 (항상 최상단)
