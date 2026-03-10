@@ -231,7 +231,21 @@ function renderUI(shadowRoot, isPremium) {
     </div>
   `;
 
-    shadowRoot.innerHTML = style + html;
+    let combinedHtml = style + html;
+
+    // 유튜브의 TrustedTypes 보안 정책 통과를 위한 커스텀 Policy 생성
+    if (window.trustedTypes && window.trustedTypes.createPolicy) {
+        try {
+            const policy = window.trustedTypes.createPolicy('nocap-policy', {
+                createHTML: (string) => string
+            });
+            combinedHtml = policy.createHTML(combinedHtml);
+        } catch (e) {
+            console.warn("NOCAP: TrustedTypes policy creation failed:", e);
+        }
+    }
+
+    shadowRoot.innerHTML = combinedHtml;
 
     // 이벤트 리스너 다시 등록 (innerHTML 덮어쓰기 때문)
     shadowRoot.getElementById('devToggle').addEventListener('click', () => {
