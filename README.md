@@ -42,3 +42,7 @@
 ### 6. 권한 및 최적화, 최상위 엣지케이스 대응
 - [ ] SPA(Single Page Application) 라우팅 전환 시 구독/자원 해제 처리 로직 (메모리 누수 방지)
 - [ ] 데이터 휘발성(Volatile 처리) 원칙을 적용하여 캐싱된 분석 데이터를 메모리에만 보관 후 탭 종료 시 삭제 처리
+
+
+
+https://docs.google.com/document/d/1JpT8y7pWZnKCtm7rtDsrc1D6e80ZFMEZCNv0VbguMFw/edit?usp=sharing
