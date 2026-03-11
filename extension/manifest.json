@@ -7,7 +7,7 @@
         "default_title": "Open NOCAP"
     },
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.ts"
     },
     "content_scripts": [
         {
@@ -15,7 +15,7 @@
                 "*://*.youtube.com/watch*"
             ],
             "js": [
-                "content.js"
+                "content.ts"
             ],
             "run_at": "document_end"
         }
