@@ -41,23 +41,23 @@ function injectUI() {
 }
 
 // DOM 엘리먼트 생성 헬퍼 함수 (innerHTML 우회)
-function h(tag, props, ...children) {
+function h(tag: string, props: any, ...children: any[]) {
   const el = document.createElement(tag);
   if (props) {
     for (const [key, val] of Object.entries(props)) {
-      if (key === 'className') el.className = val;
-      else if (key === 'id') el.id = val;
-      else if (key === 'style') el.style.cssText = val;
+      if (key === 'className') el.className = val as string;
+      else if (key === 'id') el.id = val as string;
+      else if (key === 'style') el.style.cssText = val as string;
       else if (key.startsWith('on') && typeof val === 'function') {
-        el.addEventListener(key.substring(2).toLowerCase(), val);
+        el.addEventListener(key.substring(2).toLowerCase(), val as EventListenerOrEventListenerObject);
       }
-      else el.setAttribute(key, val);
+      else el.setAttribute(key, val as string);
     }
   }
   children.forEach(child => {
     if (!child && child !== 0) return;
     if (typeof child === 'string' || typeof child === 'number') {
-      el.appendChild(document.createTextNode(child));
+      el.appendChild(document.createTextNode(child.toString()));
     } else if (Array.isArray(child)) {
       child.forEach(c => c && el.appendChild(c));
     } else {
@@ -70,7 +70,7 @@ function h(tag, props, ...children) {
 // 위젯 축소/확장 상태 관리용 전역 변수
 let isWidgetCollapsed = false;
 
-function renderUI(shadowRoot, isPremium) {
+function renderUI(shadowRoot: ShadowRoot, isPremium: boolean) {
   const score = 45;
   const color = '#fbbf24'; // Yellow
   const conclusion = "영상의 주장은 일부 사실이나, 선동적인 어휘와 확증 편향적 근거가 혼재되어 있습니다.";
@@ -311,7 +311,7 @@ function renderUI(shadowRoot, isPremium) {
         h('button', {
           className: 'close-btn',
           title: '판독기 숨기기',
-          onClick: (e) => {
+          onClick: (e: Event) => {
             e.stopPropagation(); // 위젯 전체 클릭 방지
             isWidgetCollapsed = true;
             renderUI(shadowRoot, isPremium);
@@ -322,7 +322,7 @@ function renderUI(shadowRoot, isPremium) {
       h('button', {
         className: 'toggle-btn',
         id: 'devToggle',
-        onClick: (e) => {
+        onClick: (e: Event) => {
           e.stopPropagation();
           renderUI(shadowRoot, !isPremium);
         }
@@ -345,7 +345,7 @@ function renderUI(shadowRoot, isPremium) {
         h('div', { className: 'premium-lock-icon' }, '🔒'),
         h('button', {
           className: 'premium-btn',
-          onClick: (e) => {
+          onClick: (e: Event) => {
             e.stopPropagation();
             // 테스트 단계이므로 누르면 바로 풀리도록 설정
             renderUI(shadowRoot, true);

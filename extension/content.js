@@ -53,7 +53,7 @@ function h(tag, props, ...children) {
         if (!child && child !== 0)
             return;
         if (typeof child === 'string' || typeof child === 'number') {
-            el.appendChild(document.createTextNode(child));
+            el.appendChild(document.createTextNode(child.toString()));
         }
         else if (Array.isArray(child)) {
             child.forEach(c => c && el.appendChild(c));

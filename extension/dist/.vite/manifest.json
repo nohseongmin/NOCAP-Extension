@@ -1,0 +1,20 @@
+{
+  "../../../@crx/manifest": {
+    "file": "assets/crx-manifest.js-BDfXyWyU.js",
+    "name": "crx-manifest.js",
+    "src": "../../../@crx/manifest",
+    "isEntry": true
+  },
+  "background.ts": {
+    "file": "assets/background.ts-C9uz1Jca.js",
+    "name": "background.ts",
+    "src": "background.ts",
+    "isEntry": true
+  },
+  "content.ts": {
+    "file": "assets/content.ts-BzW2Fsq6.js",
+    "name": "content.ts",
+    "src": "content.ts",
+    "isEntry": true
+  }
+}

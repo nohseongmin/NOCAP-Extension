@@ -1,0 +1,782 @@
+유튜브 영상 신뢰도 판별 및 백분율 지표 
+제공을 위한 크롬 확장 프로그램 개발 타당성 
+심층 분석 보고서 
+서론 
+현대 디지털 생태계에서 동영상 공유 플랫폼, 특히 유튜브(Y o u T u b e )는 글로벌 정보 유통의 1 차적 
+매개체로 자리 잡았다. 웹 생태계가 소수의 전문가 집단에 의해 통제되던 과거와 달리, 누구나 
+콘텐츠를 생산하고 배포할 수 있는 환경은 정보의 다양성을 가져왔으나 동시에 검증되지 않은 
+정보와 악의적으로 조작된 가짜뉴스(F a k e  N e w s )의 폭발적인 증가라는 새로운 과제를 
+안겨주었다.1  특히, 생성형 인공지능(A I) 기술의 대중화로 인해 텍스트 기반의 허위 정보를 넘어, 
+실존 인물의 얼굴과 음성을 모방하는 딥페이크(D e e p fa k e ) 영상이 급증하면서 정보의 진위 
+여부를 판별하는 것은 사회적, 정치적, 경제적으로 중대한 사안이 되었다.2  이와 같은 허위 조작 
+정보는 단순히 개인의 명예를 훼손하는 것을 넘어, 정치적 여론을 조작하고 공중 보건에 심각한 
+위협을 가하며 사회적 신뢰 비용을 기하급수적으로 증가시킨다.1  
+이러한 배경 속에서, 사용자가 시청 중인 유튜브 영상의 실시간 텍스트(자막) 및 시각적 프레임 
+데이터를 분석하여 해당 콘텐츠의 '신뢰도(C re d ib ility )'를 백분율(P e rc e n ta g e , 0 ~ 1 0 0 %  ) 형태의 
+직관적인 지표로 제공하는 크롬 확장 프로그램(C h ro m  e  E x te n s io n )의 개발은 기술적, 
+사회적으로 매우 유의미하고 시급한 시도이다. 본 보고서는 해당 확장 프로그램의 개발 
+타당성을 아키텍처 설계, 다중 양태(M  u ltim  o d a l) 데이터 추출 파이프라인, 거대 언어 모델(L L M  ) 
+기반 사실 검증(F a c t- c h e c k in g ) 알고리즘, 신뢰도 산출의 수학적 모델링, 그리고 대한민국 및 
+글로벌 법적·규제적 관점에서 심층적으로 분석한다. 분석 결과, 본 시스템의 구현은 기술적으로 
+충분히 가능하며 혁신적인 미디어 리터러시 도구로 기능할 잠재력이 있으나, 플랫폼의 서비스 
+약관(T o S ) 위반 리스크, 인공지능 환각(H a llu c in a tio n ) 현상, 그리고 자동화된 신뢰도 평가 결과로 
+인해 파생될 수 있는 명예훼손 등 법적 책임 문제를 극복하기 위한 정교한 하이브리드 설계와 
+알고리즘적 투명성이 필수적으로 요구된다.7  
+기존 기술 동향 및 유사 서비스 한계 분석 
+자동화된 신뢰도 평가 시스템을 구축하기에 앞서, 현재 학계 및 산업계에서 활용되고 있는 사실 
+검증 및 영상 분석 도구들의 현황과 한계를 명확히 이해하는 것이 필수적이다. 기존의 
+솔루션들은 특정 기능에 특화되어 있으나, 일반 사용자가 실시간으로 소비하는 영상 매체에 
+대해 통합적이고 직관적인 신뢰도 지표를 제공하는 데에는 구조적인 한계를 지니고 있다. 
+ 
+서비스 및 도구 명칭               주요 기능 및 분석 방식            한계점 및 개선 필요 영역 
+----------------Page (0) Break----------------
+In V ID  V e rifi c a tio n  P lu g in         영상 및 이미지의 
+메타데이터 분석, 역방향 
+이미지 검색, 포렌식 
+필터링을 제공하는 크롬 
+확장 프로그램.1 1  
+저널리스트 및 전문가를 
+위한 수동 포렌식 도구로, 
+일반 사용자가 직관적으로 
+이해할 수 있는 자동화된 
+백분율 점수를 제공하지 
+않음.1 1  
+E ig h tify  / Y T  T ra n s c rip t          C h a tG  P T  및 C la u d e 를 
+활용하여 유튜브 영상의 
+자막을 추출하고 핵심 
+내용을 요약하는 확장 
+프로그램.1 3  
+영상의 내용을 텍스트로 
+변환하여 요약할 뿐, 해당 
+내용의 사실 여부나 시각적 
+조작(딥페이크) 여부를 
+검증하는 기능이 부재함.1 3  
+C h e c k M  a te                          영상 및 오디오를 
+실시간으로 전사하고, 
+추출된 주장을 G  o o g le  F a c t 
+C h e c k  E x p lo re r A P I와 
+대조하여 기자에게 
+플래그를 제공하는 A I 
+시스템.1 6  
+일반 대중을 위한 소비자용 
+U I가 부재하며, 다중 
+양태(시각+ 텍스트) 정보의 
+모순을 통합적으로 
+계산하는 지표가 부족함.1 6  
+S N U 팩트체크 / P o litiF a c t        언론사 및 팩트체킹 기관이 
+수동으로 정치적 발언이나 
+사회적 이슈의 사실 여부를 
+검증하여 공개하는 
+데이터베이스.1 7  
+검증 과정이 수동으로 
+이루어져 매일 쏟아지는 
+방대한 양의 유튜브 
+콘텐츠를 실시간으로 
+처리하는 확장성에 
+근본적인 한계가 있음.8  
+T ru th m  e te r                          소셜 미디어 기여자의 
+저널리즘적 신뢰도를 
+자동으로 평가하여 정보의 
+신뢰성을 판단하는 도구.2 1  
+텍스트 작성자의 과거 
+이력에 치중되어 있어, 
+생성형 A I를 활용해 새롭게 
+생성된 익명의 가짜뉴스 
+영상 플랫폼에는 적용하기 
+어려움.2 1  
+위의 분석에서 알 수 있듯이, 사용자가 브라우저 상에서 영상을 시청하는 즉시 텍스트 추출, 주장 
+식별, 교차 검증, 시각적 조작 탐지를 동시에 수행하고 이를 직관적인 단일 점수(백분율)로 
+환산하여 보여주는 통합 엔드투엔드(E n d - to - E n d ) 솔루션은 아직 상용화되지 않았다. 따라서 
+제안된 크롬 확장 프로그램은 기존의 파편화된 기술들을 융합하여 실시간 검증 파이프라인을 
+구축함으로써 이러한 시장의 공백을 채울 수 있다. 
+크롬 확장 프로그램 아키텍처 및 U I 주입 기술 
+----------------Page (1) Break----------------
+확장 프로그램이 유튜브 웹페이지 내에서 원활하게 작동하며 신뢰도 점수를 사용자에게 
+시각적으로 전달하기 위해서는, 브라우저의 렌더링 엔진과 충돌하지 않으면서도 독립적이고 
+안정적인 사용자 인터페이스(U I) 주입 기술이 요구된다. 유튜브와 같이 동적으로 콘텐츠를 
+로드하는 복잡한 단일 페이지 애플리케이션(S P A ) 환경에서는 확장 프로그램의 스크립트와 기존 
+웹페이지 요소 간의 간섭을 최소화하는 것이 시스템 안정성의 핵심이다. 
+크롬 확장 프로그램에서 특정 웹페이지 내에 U I 요소(예: 우측 하단의 신뢰도 게이지 바 또는 
+팝업 창)를 삽입할 때 가장 빈번하게 발생하는 문제는 '스타일 오염(C S S  P o llu tio n )' 현상이다.2 2  
+확장 프로그램의 콘텐츠 스크립트(C o n te n t S c rip t)가 일반적인 방식(L ig h t D O  M  )으로 D O  M   
+요소를 삽입하게 되면, 유튜브 본래의 C S S  규칙이 확장 프로그램의 U I를 덮어씌워 레이아웃이 
+붕괴되거나, 반대로 확장 프로그램에 포함된 T a ilw in d C S S 와 같은 유틸리티 클래스(w - fu ll, 
+ro u n d e d  등)가 유튜브 페이지 내의 기존 요소들의 렌더링을 왜곡시킬 위험이 존재한다.2 3  특히 
+유튜브는 자체적인 동적 클래스명을 빈번하게 업데이트하므로, 일반적인 ID 나 클래스명 
+접두사(P re fi x in g ) 방식만으로는 장기적인 유지보수가 불가능하다.2 3  
+이러한 렌더링 충돌 문제를 근본적으로 해결하기 위해 '섀도우 돔(S h a d o w  D O  M  )' 기술을 
+필수적으로 채택해야 한다. 섀도우 돔은 웹 컴포넌트(W  e b  C o m  p o n e n ts )의 핵심 기술 중 하나로, 
+일반적인 문서의 D O  M   트리와는 완전히 분리된 독립적인 렌더링 범위(S c o p e )를 생성한다.2 2  
+확장 프로그램은 유튜브 페이지 내에 최상위 컨테이너 역할을 하는 '섀도우 호스트(S h a d o w  
+h o s t)' 요소를 삽입하고, 그 내부에 '섀도우 루트(S h a d o w  ro o t)'를 부착하여 별도의 '섀도우 
+트리(S h a d o w  tre e )'를 구성한다.2 2  이 구조에서는 섀도우 경계(S h a d o w  b o u n d a ry )를 기준으로 
+내부의 구조와 스타일이 외부로부터 완벽하게 은닉(E n c a p s u la tio n )된다.2 2  따라서 확장 프로그램 
+내부에 정의된 C S S 는 오직 섀도우 트리 내부의 요소들에만 적용되며, 유튜브 페이지의 글로벌 
+스타일시트는 섀도우 돔 내부로 침투할 수 없다.2 2  
+또한, 이벤트 전파(E v e n t P ro p a g a tio n ) 측면에서도 섀도우 돔은 특별한 제어를 요구한다. 섀도우 
+돔 내부에서 발생한 클릭이나 스크롤 등의 이벤트는 기본적으로 섀도우 경계를 넘어 외부로 
+전달되지 않는다.2 2  사용자가 신뢰도 팝업 창 내의 '세부 검증 결과 보기' 버튼을 클릭했을 때 이 
+이벤트가 브라우저의 다른 로직과 상호작용해야 한다면, 이벤트 객체 생성 시 c o m  p o s e d : tru e  
+속성을 명시적으로 설정하여 섀도우 경계를 통과할 수 있도록 설계해야 한다.2 2  결과적으로 
+섀도우 돔을 활용한 아키텍처는 유튜브 플랫폼의 잦은 U I 업데이트에도 구애받지 않고 견고하게 
+작동하는 확장 프로그램 시각화 계층을 보장한다. 
+다중 양태(M  u ltim  o d a l) 데이터 실시간 추출 파이프라인 
+영상의 신뢰도를 입체적으로 평가하기 위해서는 영상의 음성 발화 내용(자막), 영상 
+메타데이터(채널 정보, 조회수, 등록일), 그리고 시각적 프레임(이미지)이라는 이질적인 데이터 
+스트림이 실시간으로 동기화되어 추출되어야 한다. 이 과정은 기술적 난이도뿐만 아니라 
+플랫폼의 약관 및 권한 설정과 직결되는 민감한 영역이다. 
+텍스트 및 자막(C a p tio n ) 추출 기술의 한계와 대안 
+비디오 내에서 발화되는 텍스트는 사실 검증을 위한 1 차적 단서이다. 이를 확장 프로그램에서 
+----------------Page (2) Break----------------
+추출하는 방식은 공식 A P I를 이용하는 합법적 접근법과 D O  M  을 분석하는 스크래핑(S c ra p in g ) 
+방식으로 나뉘며, 각각 명확한 장단점을 지닌다. 
+ 
+데이터 추출 방식         기술적 메커니즘 및 
+구현 방법 
+주요 이점                  한계 및 법적/기술적 
+리스크 
+Y o u T u b e  D a ta  A P I 
+v 3  
+G  o o g le  C lo u d  
+C o n s o le 에서 
+할당받은 A P I 키를 
+통해 G  E T  
+/c a p tio n s /{id } 
+엔드포인트 호출.2 6  
+구글이 공식적으로 
+지원하는 합법적인 
+방법으로 구조화된 
+데이터 획득이 
+가능하며 서버 차단 
+위험이 없음.2 6  
+다운로드 권한은 
+영상 소유자 또는 
+명시적 권한 
+위임자에게만 
+부여되므로(4 0 3  
+F o rb id d e n  발생), 
+제3 자 영상의 
+자막을 다운로드할 
+수 없음.2 8  
+비공식 D O M   
+스크래핑 
+라이브러리 
+c h ro m  e - e x te n s io n -
+y t- tra n s c rip t 등의 
+라이브러리를 
+활용하여 유튜브 
+웹페이지의 숨겨진 
+내부 J S O  N /X M  L  
+트랙 데이터를 
+클라이언트 단에서 
+직접 가로채어 
+파싱.1 4  
+로그인이나 특별한 
+권한 부여 없이 
+사용자가 시청 
+가능한 모든 영상의 
+스크립트와 
+타임스탬프를 제약 
+없이 추출 가능.1 4  
+유튜브 서비스 
+약관(T o S ) 
+제5 .1 조(자동화된 
+스크래퍼 사용 금지) 
+위반 소지가 높으며, 
+플랫폼의 내부 D O  M   
+구조 변경 시 즉각 
+기능이 정지될 수 
+있음.7  
+확장 프로그램이 범용적인 가짜뉴스 판별 도구로 작동하기 위해서는 시청 중인 임의의 타인 
+영상에 대한 자막 데이터가 필수적이므로, 현실적으로 Y o u T u b e  D a ta  A P I v 3 의 자막 다운로드 
+엔드포인트는 사용할 수 없다.2 8  따라서 시스템은 부득이하게 클라이언트 브라우저 단에서 
+실행되는 콘텐츠 스크립트를 통해 플레이어 내부 네트워크 요청을 가로채거나 D O  M  에 렌더링된 
+캡션 데이터를 파싱하는 비공식 스크래핑 방식을 채택해야 한다.7  중앙 집중식 서버가 대량의 
+U R L 을 수집하여 크롤링하는 방식은 구글의 강력한 봇 탐지 시스템에 의해 즉각적으로 차단되고 
+수백만 달러의 소송 위험에 직면할 수 있으나 3 3 , 사용자의 브라우저 내에서 개별적으로 
+구동되는 확장 프로그램이 단일 세션의 데이터를 추출하는 것은 탐지가 어렵고 부하가 분산되는 
+특징이 있다.7  
+딥페이크 탐지를 위한 비디오 프레임 추출 메커니즘 
+발화 내용이 사실이라 할지라도, 영상에 등장하는 인물이나 배경이 인공지능에 의해 합성된 
+가상의 산물일 경우 해당 콘텐츠의 신뢰도는 치명적으로 하락해야 한다. 이를 판별하기 위해 
+확장 프로그램은 재생 중인 비디오의 화면을 주기적으로 캡처하여 시각적 무결성을 검증해야 
+----------------Page (3) Break----------------
+한다. 
+가장 단순한 접근법인 c h ro m  e .ta b s .c a p tu re V is ib le T a b  A P I는 현재 활성화된 탭의 가시 영역 
+전체를 스크린샷 형태로 저장한다.3 6  그러나 이 방식은 비디오 플레이어 위를 덮고 있는 유튜브 
+자체의 오버레이 U I, 재생 바, 추천 영상 팝업 등을 함께 캡처하여 이미지 분석 모델의 정확도를 
+떨어뜨리며, 간헐적으로 렌더링 동기화 문제로 인해 이미 지나간 캐시 프레임이 캡처되는 
+치명적인 레이스 컨디션(R a c e  C o n d itio n ) 오류가 보고된 바 있다.3 7  
+대안으로 고려할 수 있는 g e tD is p la y M  e d ia  A P I는 화면 공유 표준을 기반으로 작동하지만 3 9 , 
+사용자가 매번 캡처 권한을 승인하는 팝업을 클릭해야 하므로 백그라운드에서 실시간으로 
+신뢰도를 측정해야 하는 시스템의 사용자 경험(U X )을 심각하게 저해한다.4 0  
+가장 최적화된 기술적 구현은 콘텐츠 스크립트를 통해 유튜브의 H T M  L 5  < v id e o >  요소에 직접 
+접근하여 C a n v a s  A P I를 활용하는 것이다. J a v a S c rip t의 
+c a n v a s .g e tC o n te x t('2 d ').d ra w Im  a g e (v id e o , 0 , 0 , c a n v a s .w id th , c a n v a s .h e ig h t) 메서드를 
+호출하면, 불필요한 U I 요소 없이 순수한 비디오 프레임의 픽셀 데이터만을 B a s e 6 4  또는 B lo b  
+형태로 즉각적으로 추출할 수 있다.4 2  추출된 프레임 데이터는 영상의 변화량이 큰 키 
+프레임(I- fra m  e ) 위주로 선별되며, 네트워크 지연(L a te n c y )을 방지하기 위해 J P E G   포맷으로 
+압축된 후 T C P  소켓 연결을 통해 딥페이크 분석 서버로 스트리밍되어야 한다.4 5  스트리밍 
+환경에서 프레임 손실을 우려하여 U D P  프로토콜을 사용하는 경우도 있으나, 딥페이크 분석은 
+프레임 데이터의 순서와 무결성이 필수적이므로 손실된 패킷이 분석 오류를 유발할 수 있어 T C P  
+기반의 전송 구조가 더욱 안정적이다.4 6  
+인공지능 기반 다단계 사실 검증(F a c t- C h e c k in g ) 
+워크플로우 
+다중 양태 데이터가 성공적으로 추출되면, 이를 기반으로 사실 관계를 분석하고 검증하는 심층 
+추론 엔진이 가동된다. 최고 수준의 정확도와 설명 가능성(E x p la in a b ility )을 달성하기 위해, 단일 
+언어 모델(L L M  )에 의존하는 맹점을 극복하고 검색 증강 생성(R A G , R e trie v a l-A u g m  e n te d  
+G  e n e ra tio n ) 및 다중 에이전트 시스템(M  u lti- a g e n t S y s te m  )을 결합한 워크플로우를 구성해야 
+한다.2 0  
+1 단계: 원자적 주장 추출 (A to m  ic  C la im   E x tra c tio n ) 및 전처리 
+유튜브 영상에서 추출된 전체 자막 기록(T ra n s c rip t)은 방대한 잡음(N o is e )을 포함하고 있다. 
+"안녕하세요, 구독과 좋아요 부탁드립니다"와 같은 일상적 발화나 개인적 의견 표명은 진위 
+여부를 판별할 수 없는 정보이므로 분석 대상에서 제외되어야 한다.8  거대 언어 모델(예: C la im  ify  
+프레임워크 기반 프롬프팅)을 활용하여 전체 텍스트를 '독립적으로 검증 가능한 단순한 사실적 
+진술(V e rifi a b le  F a c tu a l C la im  s )' 단위로 분할해야 한다.4 8  
+추출된 주장들은 중복을 제거하기 위해 임베딩(E m  b e d d in g ) 과정을 거친다. 
+s e n te n c e - tra n s fo rm  e rs /a ll- M  in iL M  - L 6 - v 2 와 같은 경량화된 벡터 변환 모델을 사용하여 각 주장을 
+----------------Page (4) Break----------------
+고차원 텐서로 변환한 후, 두 주장 간의 코사인 유사도(C o s in e  S im  ila rity )를 계산한다.5 1  파이썬 
+환경의 u til.p y to rc h _ c o s _ s im   함수를 통해 산출된 유사도 점수가 특정 임계값(예: 0 .8 5 )을 초과할 
+경우, 동일한 맥락의 주장으로 간주하여 하나만 보존하고 나머지는 폐기한다.5 1  이 전처리 과정은 
+사실 검증 단계로 넘어가는 데이터 볼륨을 획기적으로 줄여 컴퓨팅 자원을 절약하고 L L M   A P I 
+호출 비용을 최적화하는 핵심적인 역할을 한다.5 1  
+2 단계: R A G  기반 지식 검색 및 데이터베이스 교차 검증 
+추출된 원자적 주장들의 진위 여부를 L L M  의 내부 가중치(P a ra m  e tric  K n o w le d g e )에만 의존하여 
+판별하는 것은 극심한 환각 현상을 초래할 수 있다.8  따라서 외부의 공신력 있는 팩트체크 
+데이터베이스를 실시간으로 참조하는 검색 증강 생성(R A G  ) 메커니즘이 필수적으로 결합되어야 
+한다.4 7  
+● G o o g le  F a c t C h e c k  E x p lo re r A P I 연동: 시스템은 추출된 주장을 쿼리로 변환하여 
+G  o o g le 의 F a c tC h e c k  C la im   S e a rc h  A P I에 전송한다.5 4  이 A P I는 글로벌 팩트체킹 
+네트워크에 의해 C la im  R e v ie w  마크업이 적용된 방대한 기사 
+데이터베이스(D a ta C o m  m  o n s )를 검색하여, 해당 주장이 이미 거짓(F a ls e )이나 과장(P a n ts  
+o n  F ire )으로 판별된 적이 있는지에 대한 과거 기록을 반환한다.1 6  
+● 국내 특화 재난 및 언론 검증 A P I 활용: 한국어 기반 콘텐츠의 신뢰도를 높이기 위해서는 
+로컬 데이터베이스의 연동이 필수적이다. 서울대학교 언론정보연구소가 다수의 언론사와 
+협력하여 구축한 'S N U 팩트체크' 데이터베이스나 정치적 발언 검증 자료 1 7 , 그리고 국가 
+재난 및 기상 조작 정보를 검증하기 위한 K B S  재난정보 A P I의 기상청 데이터를 크로스 체크 
+용도로 활용함으로써 시스템의 강건성을 보완할 수 있다.5 7  
+3 단계: 다중 에이전트 앙상블(M  u lti- L L M   E n s e m  b le ) 교차 분석 
+단일 A I 모델의 편향성이나 판단 오류를 방지하기 위해 복수의 서로 다른 구조를 가진 L L M  을 
+동시에 구동하여 교차 분석을 수행한다. 최신 연구에 따르면, G  o o g le 의 G  e m  in i 2 .0  F la s h , G  ro q  
+A P I를 경유하는 L la m  a  3 .3  7 0 B , 그리고 A n th ro p ic 의 C la u d e  3  H a ik u 와 같이 이기종 모델 3 개를 
+동시에 병렬 호출하는 아키텍처가 매우 효과적이다.5 1  3 개와 같은 홀수 개의 모델을 
+사용함으로써, 찬반 의견이 엇갈릴 경우 별도의 복잡한 조정 메커니즘 없이 
+다수결(T ie - b re a k in g ) 원칙에 따라 결론을 도출할 수 있다.5 1  
+나아가, 최근 스탠포드 대학교 연구진이 제안한 '진실 탐정(T ru th  S le u th )' 및 '트렌드 벤더(T re n d  
+B e n d e r)'와 같은 논쟁형 다중 에이전트 프레임워크(D e b a te C V )를 도입하면 검증의 신뢰성을 
+더욱 끌어올릴 수 있다.5 2  이 프레임워크 내에서는 검색된 외부 근거 데이터를 바탕으로 하나의 
+에이전트가 긍정적 입장의 토론자(A ffi rm  a tiv e  D e b a te r) 역할을, 다른 에이전트가 부정적 입장의 
+토론자(N e g a tiv e  D e b a te r) 역할을 맡아 논쟁을 벌이며, 세 번째 중재자(M  o d e ra to r) 에이전트가 
+이들의 논리적 정합성을 종합하여 최종적인 진실 여부를 결정짓고 평가 보고서를 작성한다.5 8  
+다중 홉(M  u lti- h o p ) 복합 추론 환경에서 이러한 구조는 단일 모델이 놓치기 쉬운 모순을 발견해 
+내어 검증 정확도(F 1 - s c o re )를 크게 향상시킨다.2 0  
+4 단계: 딥페이크 탐지 및 시각적 무결성 분석 
+----------------Page (5) Break----------------
+텍스트 분석과 병렬적으로, 추출된 비디오 프레임과 오디오 파형은 인공지능 합성 여부를 
+판별하는 외부 전용 딥페이크 탐지 A P I로 전송된다. A ry a .a i, R e a lity  D e fe n d e r, B itM  in d 와 같은 
+기업용 등급의 딥페이크 탐지 솔루션들은 얼굴 특징점, 메타데이터, 픽셀 레벨의 미세한 불일치, 
+그리고 혈류 변화로 인한 미세한 색상 변동 등을 딥러닝 기반 포렌식 모델로 정밀 분석한다.2  
+이들 시스템은 수집된 프레임이 생성적 적대 신경망(G  A N )이나 확산 모델(D iff u s io n  M  o d e l)에 
+의해 인위적으로 조작되었거나 합성되었는지 여부를 분석하여, 9 2 %   이상의 높은 정확도로 
+실시간 합성 미디어 탐지 점수를 반환한다.2  특히, 유튜브 생태계에서 최근 급증하는 '유명인 
+사칭 암호화폐 투자 유도 영상'이나 '선거 조작 목적의 합성 정치인 연설' 등은 이러한 시각적 
+무결성 검증 단계를 거치지 않으면 그 위험성을 차단할 수 없다.3  
+온디바이스(O n - D e v ic e ) A I 기반 지연 시간 및 프라이버시 
+최적화 
+상기 기술된 클라우드 기반의 다중 에이전트 L L M   및 딥페이크 분석 시스템은 최고의 정확도를 
+보장하지만, 이를 모든 사용자의 모든 유튜브 시청 세션에 상시 적용하는 것은 치명적인 문제를 
+야기한다. 스트리밍 비디오 환경에서 3 0 fp s 의 프레임 데이터를 지속적으로 클라우드로 
+송출하면 극심한 네트워크 병목(B o tt le n e c k ) 현상이 발생하며, 1 프레임당 3 3 m  s  이내의 처리가 
+필요한 실시간성(L a te n c y ) 요구 사항을 충족하기 어렵다.6 6  더욱이 수만 명의 활성 사용자가 
+동시에 A P I를 호출할 경우 발생하는 대규모 연산 비용은 확장 프로그램 운영 주체에게 막대한 
+재정적 부담을 안겨주며, 사용자의 브라우징 데이터를 외부 서버로 지속 전송함에 따른 
+프라이버시 침해 논란을 피할 수 없다.6 7  
+이러한 클라우드 의존적 병목 현상을 타개하기 위해, 사용자의 로컬 브라우저 자원을 활용하는 
+'온디바이스 A I(O  n - D e v ic e  A I)' 기술의 도입이 필수적이다. 브라우저 내부에서 1 차적인 연산을 
+수행하여 불필요한 서버 통신을 차단하는 엣지 컴퓨팅(E d g e  C o m  p u tin g ) 모델은 본 확장 
+프로그램의 실효성을 좌우한다. 
+크롬 빌트인 A I (G e m  in i N a n o ) 활용 
+구글은 크롬 브라우저 최신 버전에 경량화된 대규모 언어 모델인 '제미나이 나노(G  e m  in i 
+N a n o )'를 내장한 빌트인 A I(B u ilt- in  A I A P I) 기능을 공식 지원하기 시작했다.6 9  사용자의 로컬 
+환경(4 G  B  이상의 V R A M  , 2 2 G  B  이상의 여유 디스크 공간 요구 7 1 )에 모델이 다운로드되면, 확장 
+프로그램은 외부 서버 연동 없이 w in d o w .a i.la n g u a g e M  o d e l 또는 제안용 P ro m  p t A P I를 호출하여 
+오프라인 상태에서도 자연어 추론을 수행할 수 있다.6 9  
+이 로컬 모델을 활용하면 추출된 유튜브 자막의 문맥 요약, 자극적인 헤드라인(C lic k b a it) 판단, 
+기초적인 논리적 오류 및 편향성 분석을 서버 지연 없이 즉각적으로 실행할 수 있다.7 3  단, 
+제미나이 나노 모델 운용 시 주의해야 할 기술적 제약이 존재한다. 구글은 G  e m  in i 모델 라인업이 
+최대 1 0 0 만 토큰의 거대한 컨텍스트 윈도우(C o n te x t W  in d o w )를 지원한다고 발표했으나 7 5 , 
+실제 크롬 내장 환경 및 웹 클라이언트에서 다량의 긴 비디오 스크립트를 지속적으로 주입할 
+경우, 자원 절약을 위해 모델이 전체 컨텍스트를 유지하지 못하고 과거 프롬프트를 공격적으로 
+----------------Page (6) Break----------------
+잘라내는 '컨텍스트 슬라이싱(C o n te x t S lic in g )' 현상이 빈번하게 관측된다.7 6  따라서 길이가 수 
+시간에 달하는 영상의 경우, 전체 텍스트를 로컬 A I에 한 번에 입력하는 대신 주요 발화 단위로 
+분할(C h u n k in g )하여 처리하는 최적화 전략이 수반되어야 한다. 
+T ra n s fo rm  e rs .js  및 W  e b G P U  가속 
+허깅페이스(H u g g in g  F a c e ) 커뮤니티가 주도하는 tra n s fo rm  e rs .js  라이브러리는 P y th o n  기반의 
+최신 머신러닝 모델 구조를 J a v a S c rip t 환경으로 완벽히 포팅하여, 크롬 확장 프로그램 내에서 
+다양한 추론 작업을 가능하게 한다.7 8  특히 최신 W  e b G  P U  규격과 결합될 경우, 사용자의 그래픽 
+하드웨어 가속을 통해 매우 낮은 지연 시간으로 로컬 추론을 수행한다.7 9  
+tra n s fo rm  e rs .js 가 제공하는 '파이프라인 A P I'를 활용하면, 별도의 서버 전송 없이 확장 
+프로그램의 백그라운드 워커에서 텍스트 감성 분석(S e n tim  e n t A n a ly s is ), 토큰 분류, 
+제로샷(Z e ro - s h o t) 주제 분류 등을 수행할 수 있다.7 8  예를 들어, 추출된 원자적 주장에 대해 거짓 
+선동에서 흔히 발견되는 과도한 부정적 감정이나 선동적 어휘의 사용 빈도를 계량화하여 신뢰도 
+평가의 기초 지표로 삼을 수 있다.8 1  이처럼 가벼운 판단은 온디바이스에서 즉각적으로 처리하고, 
+교차 검증이 필요한 심층 사실 확인 작업이나 높은 연산량을 요구하는 딥페이크 분석만 
+선택적으로 클라우드 서버에 위임하는 하이브리드 아키텍처 구성이 가장 이상적인 시스템 
+설계이다.6 6  
+종합 신뢰도 백분율 산출을 위한 수학적 모델링 및 알고리즘 
+인공지능의 텍스트 분석 결과, 외부 팩트체크 데이터베이스 검색 결과, 그리고 딥페이크 탐지 
+결과라는 이질적인 지표들을 수집했다면, 이를 최종 사용자에게 제공할 '0 ~ 1 0 0 %   형태의 종합 
+신뢰도(O  v e ra ll C re d ib ility  S c o re )'로 융합하는 정교한 알고리즘이 필요하다. 신뢰도는 단순히 
+참과 거짓의 이분법으로 귀결되지 않으며, 정보의 불확실성, 출처의 권위, 그리고 시각적 매체의 
+진위성을 아우르는 다차원적인 개념이기 때문이다.5 0  
+본 시스템은 다중 기준 평가(M  u lti- c rite ria  E v a lu a tio n )와 신호 대 잡음비(S ig n a l- to - N o is e  R a tio )를 
+고려한 가중 평균(W  e ig h te d  A v e ra g e ) 조합 방식을 채택하여 최종 신뢰도를 산출한다.5 0  
+복합 신뢰도 산출 수식 (       ) 
+최종 신뢰도 점수            은 세 가지 독립적인 하위 지표의 가중합으로 모델링된다: 
+1.     (사실적 무결성 지수, 0 ~ 1 0 0 ): 발화된 원자적 주장들이 교차 검증을 통해 
+참(T ru e )으로 판명된 비율 및 논리적 정합성. 
+2.     (시각적 진위성 지수, 0 ~ 1 0 0 ): 딥페이크 탐지 알고리즘이 반환한, 해당 영상 
+프레임이 인위적으로 조작되지 않았을 확률. 
+3.      (출처 및 채널 투명성 지수, 0 ~ 1 0 0 ): 영상을 게시한 채널의 과거 신뢰성 이력, 
+편향성, 그리고 저널리즘 원칙 준수 여부.5  
+----------------Page (7) Break----------------
+기본적인 선형 가중 평균 공식은 다음과 같이 정의된다: 
+ 
+여기서 각 지표의 가중치 합계는 1 이다 (                                 ). 시스템의 설계 목적에 따라 
+정보의 내용적 가치를 중시한다면      에 높은 비중(예: 0 .5 )을 부여하고, 영상 조작 여부에 
+민감하게 반응해야 한다면      의 비중(예: 0 .3 )을 조절할 수 있다.5 0  
+세부 점수 평가 방법론 
+1 . 사실적 무결성 산출 모델 (         ) 영상 내에서 추출된 총      개의 검증 가능한 원자적 
+주장(A to m  ic  C la im  s )에 대하여, 다중 L L M   앙상블이 판별한 각 주장   의 진실 확률을      라 
+하자.5 0  모든 주장이 동일한 파급력을 가지지 않으므로, 주장의 사회적 중요도나 논쟁의 여지에 
+따라 가중치(중요도)      를 부여한다.5 0  사실적 무결성 점수는 다음과 같은 수식으로 계량화된다. 
+ 
+추가적으로, 텍스트 상의 주장은 사실이더라도 이를 뒷받침하기 위해 제시된 영상 자료나 
+도표가 전혀 무관하거나 교묘하게 왜곡된 경우(다중 양태 간의 모순 발생), 다중 홉 다중 양태 
+검증(M  u lti- h o p  M  u ltim  o d a l C la im   V e rifi c a tio n ) 과정에서 논리적 불일치(C o n tra d ic tio n ) 페널티를 
+부여하여 점수를 대폭 삭감한다.5 3  
+2 . 출처 및 투명성 평가 모델 (           ) 정보의 신뢰성은 그 내용을 생산한 주체의 권위와 
+밀접하게 연관된다.1  언론 미디어의 투명성 평가 기준에 착안하여, 영상이 업로드된 유튜브 
+채널에 대한 다면 평가를 수행한다.5  세부 평가 항목은 다음과 같은 점수 배분을 가질 수 있다 8 7 : 
+● 해당 채널이 과거 가짜뉴스를 반복적으로 유포한 이력이 없음 (최대 2 2 점) 
+● 정보를 객관적이고 책임감 있게 수집 및 제시함 (최대 1 8 점) 
+● 명확한 사실 오류 발생 시 신속하게 정정 및 해명함 (최대 1 2 .5 점) 
+● 사실 보도와 개인적 의견/논평을 명확히 구분함 (최대 1 2 .5 점) 
+● 기만적이거나 과도하게 자극적인(C lic k b a it) 제목과 썸네일을 지양함 (최대 1 0 점) 이러한 
+기준들을 알고리즘에 반영하기 위해 채널 U R L 을 바탕으로 기존 이력 및 트래픽 신뢰도를 
+조회하고(예: A d  F o n te s  M  e d ia  기준 차용), 오픈소스 신뢰도 채점 
+라이브러리(C re d ib ility S c o re  등)를 결합하여 해당 채널의 객관적 레퓨테이션 지수를 
+산출한다.9 0  
+----------------Page (8) Break----------------
+3 . 시각적 조작에 대한 치명적 감점(V e to ) 로직 단순한 선형 가중합 모델의 치명적인 단점은, 한 
+요소의 치명적 결함을 다른 요소가 상쇄할 수 있다는 점이다.8 6  예컨대, 발화 내용 전체가 역사적 
+사실에 부합하여 $ S _ {fa c t}$ 가 1 0 0 점에 가깝고, 저명한 채널에서 업로드하여 $ S _ {s o u rc e }$ 가 
+9 0 점이라 하더라도, 영상 내 등장인물이 악의적인 목적을 띈 1 0 0 %   딥페이크 조작 영상(
+)으로 판명된다면, 해당 콘텐츠는 정보 교란 목적의 악성 기만 전술로 취급되어야 
+한다.5 3  따라서 종합 신뢰도 알고리즘에는 비선형적 억제 함수가 포함되어야 한다. 만약             
+이 시스템 임계값(예: 3 0 점 미만) 아래로 떨어지면, 다른 모든 지표의 우수성과 무관하게            
+을 강제로 2 0 %   이하로 추락시키는 클리핑(C lip p in g ) 로직을 적용하여 허위 조작 정보의 
+파급력을 원천 차단해야 한다. 
+도출된            백분율 수치는 섀도우 돔 내에 렌더링된 확장 프로그램 U I를 통해 신호등 색상 
+코드(초록: 8 0 ~ 1 0 0 %   안전, 노랑: 4 0 ~ 7 9 %   주의/논쟁적, 빨강: 0 ~ 3 9 %   위험/조작)와 함께 
+사용자에게 즉각적으로 시각화된다. 또한, 점수에 대한 근거(R a tio n a le s )를 투명하게 제공하여 
+사용자가 왜 해당 점수가 도출되었는지 교차 검증된 원본 링크 등과 함께 확인할 수 있도록 
+설계해야 한다.5 0  
+법적 책임, 플랫폼 약관 및 규제적 위험성 심층 분석 
+본 크롬 확장 프로그램의 개발이 기술적 난제를 완벽히 해결하더라도, 글로벌 플랫폼의 
+약관(T e rm  s  o f S e rv ic e ) 위반 리스크와 각국 정부의 촘촘한 디지털 규제망이라는 법률적, 윤리적 
+장벽을 통과하지 못하면 상용화는 불가능하다.6  특히, 자동화된 A I가 인간의 검수 없이 특정 
+영상의 신뢰도를 실시간으로 재단하여 점수를 매기는 행위는 중대한 법적 딜레마를 내포하고 
+있다.4  
+1 . 유튜브 서비스 약관(T o S ) 및 데이터 스크래핑 규제 충돌 
+구글은 유튜브 플랫폼 내의 막대한 데이터 자본을 보호하기 위해 폐쇄적이고 엄격한 데이터 
+접근 정책을 시행 중이다.6 8  유튜브 약관 5 .1 조는 공공 검색 엔진의 색인 목적을 제외하고 봇, 
+봇넷, 자동화된 스크래퍼(S c ra p e r) 등을 사용하여 서비스 내 데이터에 기계적으로 접근하거나 
+무단으로 대량 수집하는 행위를 엄격히 금지하고 있다.7  신뢰도 판별을 위해 사용자의 
+브라우저에서 확장 프로그램이 D O  M  을 읽어 자막을 추출하거나 영상 프레임을 가로채어 백엔드 
+서버로 송신하는 메커니즘은 본질적으로 플랫폼의 통제를 우회하는 '비인가 데이터 추출 및 
+크롤링'으로 간주될 소지가 다분하다.2 6  또한 구글의 개발자 정책(D e v e lo p e r P o lic ie s )은 A P I 
+클라이언트가 유튜브 영상의 데이터를 무단으로 다운로드하거나 변형하여 재구성하는 것을 
+금지하며, 특히 써드파티(T h ird - p a rty ) A I 기업이 자사의 생성형 모델 훈련 목적으로 유튜브 
+크리에이터의 콘텐츠를 무단 사용하는 행위를 명시적으로 차단하고 있다.9 7  만약 확장 프로그램 
+개발사가 수집된 자막 및 딥페이크 프레임 데이터를 백엔드 서버에 무기한 저장하고 이를 
+이용해 자체 신뢰도 판별 A I 모델을 고도화(학습)할 경우, 이는 지적재산권(IP ) 침해 및 대규모 
+민사 소송의 대상이 될 수 있다.9 7  이를 회피하기 위한 현실적인 대안은 철저한 '휘발성 
+클라이언트 사이드 처리(V o la tile  C lie n t- s id e  P ro c e s s in g )'이다. 서버에 비디오 데이터를 저장하지 
+----------------Page (9) Break----------------
+않고, 분석 즉시 삭제하며, 사용자가 로컬 기기 내장 A I(G  e m  in i N a n o  등)를 활용하여 자신의 
+화면에서 부가적인 계산을 수행하는 형태로 아키텍처를 설계함으로써 규제 우회 논리를 
+강화해야 한다.6 8  
+2 . 대한민국 정보통신망법 및 A I 규제 법안의 영향 
+대한민국은 인공지능 윤리와 디지털 딥페이크 성범죄, 가짜뉴스 선동에 대해 세계에서 가장 
+빠르고 강력한 수준의 규제 법안을 논의 및 시행 중인 국가이다.6  
+● 플랫폼 및 서비스 제공자의 의무 강화: 현행 '정보통신망 이용촉진 및 정보보호 등에 관한 
+법률(정보통신망법)'과 발의된 가짜뉴스 유통 방지 관련 법안들은 불법 합성물 및 명백한 
+허위 사실에 대해 신속하게 유통 경로를 차단하거나 삭제하지 않은 서비스 제공자에게 
+책임을 묻는 간접 규제 구조를 채택하고 있다.9  카카오와 네이버 등 국내 주요 IS P  
+사업자들은 이미 자체 A I 필터링 기술과 신고 시스템을 통해 허위 조작 정보 모니터링 
+체계를 가동 중이다.3  본 확장 프로그램 역시 정보통신서비스의 일종으로 분류될 수 
+있으므로, 시스템이 가짜뉴스를 판별하고도 적절한 경고 조치를 취하지 않아 피해가 
+확산되었을 때 규제 당국의 제재 대상이 될 잠재적 위험을 안고 있다.6  
+● 알고리즘 오분류(F a ls e  F la g g in g )에 따른 명예훼손 및 제조물 책임: 인공지능이 완벽하지 
+않음에서 기인하는 가장 큰 리스크는 '오류'이다. 만약 확장 프로그램이 적법하고 진실된 
+특정 기업의 홍보 영상이나 정치인의 정상적인 연설 영상을 "신뢰도 1 0 %  의 딥페이크 
+가짜뉴스"로 잘못 낙인찍을 경우, 해당 채널 소유주는 심각한 평판 저하 및 경제적 손실을 
+입게 된다.4  이 경우 피해자는 확장 프로그램 개발사를 상대로 정보통신망법상 허위사실 
+유포에 의한 명예훼손 또는 영업방해 혐의로 소송을 제기할 수 있다. 더욱이 최근 
+법조계에서는 소프트웨어나 A I 알고리즘을 '제조물'로 인정하여 제조물 책임법(P ro d u c t 
+L ia b ility  A c t) 상의 엄격 책임을 물을 수 있는지에 대한 논의가 활발히 진행 중이다.1 0  A I 
+알고리즘의 편향된 학습 데이터나 추론 오류로 인해 도출된 불공정한 평가 결과는 중대한 
+배상 책임으로 이어질 수 있다.9 5  
+이러한 전방위적인 법적 리스크를 통제하기 위해, 서비스 제공자는 사용자 인터페이스 내에 
+법률적 효력을 지니는 명시적인 면책 조항(D is c la im  e r)을 필수적으로 삽입해야 한다. "제공되는 
+신뢰도 백분율은 확률적 인공지능 모델과 특정 데이터베이스에 기반한 참고용 보조 지표일 뿐, 
+해당 영상 내용의 절대적 진실 혹은 허위를 법적으로 보증하거나 확정하는 것이 아님"을 
+사용자가 명확히 인지하도록 강제해야 한다. 더불어, 점수가 도출된 논리적 추론 과정과 참조된 
+근거 문헌 리스트를 사용자에게 상세히 노출하는 설명 가능한 인공지능(X A I) 인터페이스를 
+구축함으로써, 알고리즘 판정의 절차적 투명성을 입증하고 법적 분쟁 시 방어 논리를 확보해야 
+한다.8 3  
+결론 및 실효성 제고 방안 
+유튜브 영상에 내재된 다중 양태의 정보를 실시간으로 수집하고, 이를 고도의 인공지능 
+파이프라인으로 교차 검증하여 직관적인 신뢰도 백분율로 제공하는 크롬 확장 프로그램의 
+개발은 현대 디지털 정보 생태계의 병폐를 치유하기 위해 절대적으로 필요하며, 최신 웹 기술과 
+A I 발전 속도를 고려할 때 기술적으로 충분히 구현 가능한 혁신적 과제이다.5 0  특히 C h ro m  e  
+----------------Page (10) Break----------------
+B u ilt- in  A I(G  e m  in i N a n o )와 다양한 브라우저 엣지 컴퓨팅 기술의 성숙은 과거 불가능에 가까웠던 
+실시간 로컬 추론을 현실화함으로써 시스템의 지연 시간과 비용 구조를 획기적으로 
+개선하였다.6 9  
+그러나 본 프로젝트가 지속 가능한 상용 서비스로 안착하기 위해서는 기술적 구현을 넘어선 
+입체적인 전략이 요구된다. 첫째, 단일 클라우드 서버에 의존하는 거대한 моноo lith ic  구조를 
+탈피하여, 비용 효율성과 프라이버시 보호를 극대화할 수 있는 엣지- 클라우드(E d g e - C lo u d ) 
+하이브리드 아키텍처를 구축해야 한다. 로컬 환경에서 1 차적인 문맥 필터링을 수행하고, 교차 
+검증이 필수적인 핵심 주장 및 딥페이크 판별 대상 프레임에 한해서만 외부 A P I(R A G   
+데이터베이스 및 전문 판독 솔루션)와 제한적으로 통신하는 정교한 데이터 라우팅이 
+필수적이다.5 3  둘째, 신뢰도를 단일 차원의 흑백 논리로 규정하는 편협함을 피하기 위해, 다중 
+기준 평가(M  u lti- c rite ria )에 기반한 세분화된 종합 지표 모델을 도입하여 평가의 객관성을 
+담보해야 한다.5 0  마지막으로, 글로벌 플랫폼의 약관 위반 및 대한민국 정보통신망법에 기인한 
+법적 책임 공방을 회피하기 위해, 데이터 수집 메커니즘을 서비스 약관의 회색 지대에 맞추어 
+고도화하고, 알고리즘 판정 과정의 설명 가능성(E x p la in a b ility )을 사용자에게 투명하게 제공하는 
+방어적 설계가 전제되어야 한다.7  
+본 보고서에서 제시된 기술적 방법론, 수학적 모델, 그리고 규제 대응 전략을 유기적으로 
+통합한다면, 제안된 확장 프로그램은 딥페이크와 허위 정보의 홍수 속에서 사용자 스스로 
+비판적 매체 수용 능력을 함양할 수 있도록 돕는 가장 강력하고 대중적인 디지털 백신이자 
+미디어 리터러시 플랫폼으로 확고하게 자리매김할 수 있을 것이다. 
+참고 자료 
+1. P re d ic tin g  N e w s  S o u rc e  C re d ib ility  -  C o n fe re n c e  fo r T rut  h  a nd    T rus  t O  n lin e , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://tru th a n d tru s to n lin e .c o m  /w p - c o n te n t/up   lo a d s /2 0 1 9 /0 9 /p a p e r_ 5 .p d f 
+2. D e e p fa k e  D e te c tio n  A P I -  A ry a .a i, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://a ry a .a i/a p e x - a p is /d e e p fa k e - d e te c tio n - a p i 
+3. “딥페이크 성범죄 국가 재난 수준”...네이버 이어 카카오도 피해 신고 채널 열었다 -  
+D a u m  , 3 월 9 , 2 0 2 6 에 액세스, h tt p s ://v .d a u m  .n e t/v /8 Q  2 lg k k P R L  
+4. T h e  ris k s  o f a rtifi c ia l in te llig e n c e  a nd    th e  re s p o n s e  o f K o re a n  c iv il s o c ie ty , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .a p c .o rg /e n /b lo g /ris k s - a rtifi c ia l- in te llig e n c e - a n d - re s p o n s e - k o re a n - c iv
+il- s o c ie ty  
+5. R e lia b ility  C rite ria  fo r N e w s  W  e b s ite s  -  T h e  V a ria tio n  L a b  @   H a rv a rd  S E A S , 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://g la s s m  a n la b .s e a s .h a rv a rd .e d u /p a p e rs /re lia b ility _ c rite ria .p d f 
+6. S o u th  K o re a  in tro d u c e s  to u g h  A I s a fe ty  la w s  a m  id  d e e p fa k e  a n d  s c a m   c o n c e rn s  -  
+Y o u T u b e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = p A Z W  J V c z 6 w g  
+7. A m   I b re a k in g  th e  Y o u T u b e  te rm  s  o f s e rv ic e ?  : r/w e b d e v  -  R e d d it, 3 월 9 , 2 0 2 6 에 
+액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/w e b d e v /c o m  m  e n ts /1 jd w k k 9 /a m  _ i_ b re a k in g _ th e _ y o u tu b
+e _ te rm  s _ o f_ s e rv ic e / 
+----------------Page (11) Break----------------
+8. T h e  p e rils  a n d  p ro m  is e s  o f fa c t- c h e c k ing    w ith  la rg e  la n g ua  g e  m  o d e ls  -  F ro n tie rs , 
+3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .fro n tie rs in .o rg /jo u rn a ls /a rtifi c ia l- in te llig e n c e /a rtic le s /1 0 .3 3 8 9 /fra i.2 0 2
+4 .1 3 4 1 6 9 7 /fu ll 
+9. 유튜브 이용자들의 허위정보 노출경험 및 규제에 대한 인식 차이 -  K o re a  S c ie n c e , 
+3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .k o re a s c ie n c e .k r/a rtic le /J A K O  2 0 2 2 2 5 7 5 1 9 2 8 6 3 9 .p a g e ? & la n g = k o  
+10. C u rre n t S ta te  o f P ro d u c t L ia b ility  fo r S o ft w a re  a nd    A I in  K o re a  -  K im   &  C h a n g , 3 월 
+9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .k im  c h a n g .c o m  /e n /in s ig h ts /d e ta il.k c ? s c h _ s e c tio n = 4 & id x = 2 9 9 3 4  
+11. In V ID  V e rifi c a tio n  P lu g in , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .in v id - p ro je c t.e u /to o ls - a n d - s e rv ic e s /in v id - v e rifi c a tio n - p lu g in / 
+12. F a k e  n e w s  d e b u n k e r b y  In V ID , W  e V e rify  &  V e ra A I -  C h ro m  e  W  e b  S to re , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://c h ro m  e w e b s to re .g o o g le .c o m  /d e ta il/fa k e - n e w s - d e b u n k e r- b y - in v /m  h c c p o a
+fg d g b h n jfh  k c m  g k n n d k e e n fh  e  
+13. E ig h tify : A I Y o u T u b e  S u m  m  a riz e r -  C h ro m  e  W  e b  S to re , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://c h ro m  e w e b s to re .g o o g le .c o m  /d e ta il/e ig h tify - a i- y o u tub   e - s um    m  a /c d c p a b k o
+lg a lp g e in g b d c e b o je b fe lg b  
+14. Y o u tu b e  T ra n s c rip t -  C h ro m  e  W  e b  S to re , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://c h ro m  e w e b s to re .g o o g le .c o m  /d e ta il/y o u tub   e - tra n s c rip t/jg ib a o k la b o p ile e p l
+d n lk b b c ib h b g m  d  
+15. B e s t 7  C h ro m  e  P lu g in  Y o u T u b e  T ra n s c rip t G  e n e ra to r E x te n s io n , 3 월 9 , 2 0 2 6 에 
+액세스, 
+h tt p s ://v o c a lre m  o v e r.e a s e u s .c o m  /a i- a rtic le /c h ro m  e - p lu g in - y o u tub   e - tra n s c rip t.h t
+m  l 
+16. C h e c k M  a te : A I fo r fa c t- c h e c k in g  v id e o  c la im  s  -  J o u rna  lis m  A I, 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://w  w  w .jo u rn a lis m  a i.in fo /b lo g /a i- fo r- fa c tc h e c k in g - v id e o - c la im  s  
+17. 국내 팩트체크의 허브, S N U 팩트체크 -  관훈저널 : 논문 | D B p ia , 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://w  w  w .d b p ia .c o .k r/jo u rn a l/a rtic le D e ta il? no   d e Id = N O  D E 0 9 1 1 5 1 2 2  
+18. 허위 정보의 시대, S N U 팩트체크와 함께 극복하자 -  서울대뉴스, 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://w  w  w .s n u .a c .k r/s n u n o w /s n u _ s to ry ? m  d = v & b b s id x = 1 3 1 9 4 1  
+19. T o o ls  T h a t F ig h t D is in fo rm  a tio n  O  n line    -  R A N D , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .ra n d .o rg /re s e a rc h /p ro je c ts /tru th - d e c a y /fi g h tin g - d is in fo rm  a tio n /s e a r
+c h .h tm  l 
+20. M  u lti- L L M   A g e n ts  A rc h ite c tu re  fo r C la im   V e rifi c a tio n  -  C E U R - W  S .o rg , 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://c e u r- w s .o rg /V o l- 3 9 6 2 /p a p e r2 0 .p d f 
+21. B u ild in g  th e  'T ru th m  e te r': T ra in in g  a lg o rith m  s  to  h e lp  jo ur  na  lis ts  a s s e s s  th e  
+c re d ib ility  o f s o c ia l m  e d ia  s o u rc e s  -  C ity  R e s e a rc h  O  nl in e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://o p e n a c c e s s .c ity .a c .u k /id /e p rin t/1 7 4 4 6 / 
+22. W  h a t is  S h a d o w  D O  M   a n d  H o w  It's  U s e d  in  C h ro m  e  E x te ns  io ns   -  D E V  Co   m  m  u n ity , 
+3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v .to /le a rc is e _ h e a lth /w h a t- is - s h a d o w - d o m  - a n d - h o w - its - us  e d - in - c h ro m
+e - e x te n s io n s - 5 e 7 e  
+23. U s in g  S h a d o w  D O  M   to  is o la te  in je c te d  b ro w s e r e x te n s io n  c o m  p o n e n ts , 3 월 9 , 
+----------------Page (12) Break----------------
+2 0 2 6 에 액세스, 
+h tt p s ://k a a n g e n c .m  e /2 0 2 4 .0 5 .1 8 .u s in g - s h a d o w - d o m  - to - is o la te - in je c te d - b ro w s e r
+- e x te n s io n - c o m  p o / 
+24. H o w  to  u s e  th e  S h a d o w  R o o t D O  M   -  B ui ld  B e tt e r C h ro m  e  E x te ns  io ns   -  Y o u T u b e , 
+3 월 9 , 2 0 2 6 에 액세스, h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = y M  K 1 H Y V H U x Y  
+25. E x p la in in g  th e  S h a d o w  D O  M   | D e v e lo p e r Q  ui c k  T a k e s  -  Y o uT  u b e , 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = K 5i 9 z M  z V lz M   
+26. H o w  to  L e g a lly  S c ra p e  Y o u T u b e  V id e o s  U s ing    th e  Y o uT  u b e  D a ta  A P I -  D E V  
+C o m  m  u n ity , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v .to /p a v ith ra n _ 2 5 /h o w - to - le g a lly - s c ra p e - y o u tub   e - v id e o s - us  in g - th e - y o u
+tu b e - d a ta - a p i- 5 b k 0  
+27. A P I R e fe re n c e  | Y o u T u b e  D a ta  A P I -  G  o o g le  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e rs .g o o g le .c o m  /y o u tub   e /v 3 /d o c s  
+28. C a p tio n s : d o w n lo a d  | Y o u T u b e  D a ta  A P I -  G  o o g le  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://d e v e lo p e rs .g o o g le .c o m  /y o u tub   e /v 3 /d o c s /c a p tio n s /d o w n lo a d  
+29. U n a b le  to  d o w n lo a d  c lo s e d  c a p tio n s  in  Y o u tub   e  A P I v 3  -  S ta c k  O  v e rfl o w , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /3 0 5 1 4 0 9 7 /u n a b le - to - d o w n lo a d - c lo s e d - c a p t
+io n s - in - y o u tu b e - a p i- v 3  
+30. Y o u tu b e  D a ta  A P I v 3  C a p tio n s  -  D o w n lo a d  b ro k e n  -  S ta c k  O  v e rfl o w , 3 월 9 , 2 0 2 6 에 
+액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /7 8 9 6 3 5 5 7 /y o u tub   e - d a ta - a p i- v 3 - c a p tio n s - d o
+w n lo a d - b ro k e n  
+31. M  y  N e w  C h ro m  e  E x te n s io n : In s ta n tly  C o n v e rt Y o u T ub   e  V id e o s  to  T e x t! -  R e d d it, 
+3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/y o u tu b e /c o m  m  e n ts /1 jh 9 o q m  /m  y _ n e w _ c h ro m  e _ e x te n s io
+n _ in s ta n tly _ c o n v e rt_ y o u tu b e / 
+32. D o w n lo a d  Y o u tu b e  T ra n s c rip ts  in  B u lk  us  ing    th is  C h ro m  e  E x te ns  io n,   3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = _ B b D d M  J b u J A  
+33. Is  Y o u T u b e  C a p tio n s  S c ra p p in g  L e g a l (o r s o m  e  w a y  to  g e t th e  d a ta )?  -  R e d d it, 3 월 
+9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/w e b s c ra p in g /c o m  m  e n ts /1 p d v 1 7 l/is _ y o u tub   e _ c a p tio n s _ s
+c ra p p in g _ le g a l_ o r_ s o m  e _ w a y / 
+34. H o w  D o  Y o u  C o n s is te n tly  P u ll Y o u T ub   e  C a p tio ns   in  a  C h ro m  e  E x te ns  io n ?  : r/re a c t -  
+R e d d it, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/re a c t/c o m  m  e n ts /1 p h le x 4 /h o w _ d o _ y o u _ c o n s is te n tly _ p u ll
+_ y o u tu b e _ c a p tio n s _ in / 
+35. B u ilt a  C h ro m  e  E x te n s io n  (fo r Y o u T ub   e  v id e o  to  T e x t E x tra c tio n)   o n  a  H u n c h  – 
+W  h a t's  th e  B e s t N e x t S te p ?  : r/S a a S  -  R e d d it, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/S a a S /c o m  m  e n ts /1 jq i5 ih /b u ilt_ a _ c h ro m  e _ e x te n s io n _ fo r_ y
+o u tu b e _ v id e o _ to / 
+36. c h ro m  e .ta b C a p tu re  | A P I -  C h ro m  e  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e r.c h ro m  e .c o m  /d o c s /e x te n s io n s /re fe re nc  e /a p i/ta b C a p tur  e  
+37. c h ro m  e .ta b s .c a p tu re V is ib le T a b  is  c a p tu ring    e le m  e n ts  w ith  d is p la y : no   n e ; s ty lin g , 
+3 월 9 , 2 0 2 6 에 액세스, 
+----------------Page (13) Break----------------
+h tt p s ://g ro u p s .g o o g le .c o m  /a /c h ro m  ium    .o rg /g /c h ro m  iu m  - d is c u s s /c /F X k J _ tb L F T 8  
+38. c h ro m  e .ta b s .c a p tu re V is ib le T a b  c a p tu re s  w ro n g  a re a  -  S ta c k  O  v e rfl o w , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /4 4 9 7 7 2 9 3 /c h ro m  e - ta b s - c a p tur  e v is ib le ta b - c
+a p tu re s - w ro n g - a re a  
+39. M  e d ia D e v ic e s : g e tD is p la y M  e d ia () m  e th o d  -  W  e b  A P Is  -  M  D N , 3 월 9 , 2 0 2 6 에 
+액세스, 
+h tt p s ://d e v e lo p e r.m  o z illa .o rg /e n - U S /d o c s /W  e b /A P I/M  e d ia D e v ic e s /g e tD is p la y M  e d i
+a  
+40. H o w  to  b u ild  a  C h ro m  e  re c o rd in g  e x te n s io n  u s in g  ta b C a p tur  e  A P I -  R e c a ll.a i, 3 월 
+9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re c a ll.a i/b lo g /h o w - to - b u ild - a - c h ro m  e - re c o rd in g - e x te n s io n  
+41. P riv a c y - p re s e rv in g  s c re e n  s h a rin g  c o n tro ls  | W  e b  P la tf o rm   -  C h ro m  e  fo r 
+D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e r.c h ro m  e .c o m  /d o c s /w e b - p la tf o rm  /s c re e n - s h a rin g - c o n tro ls  
+42. I b u ilt a  C h ro m  e  e x te n s io n  to  e x tra c t c o d e  fro m   Y o u T ub   e  tut  o ria ls  —  w o u ld  th is  
+s o lv e  a  re a l p ro b le m  ?  : r/c h ro m  e _ e x te ns  io ns   -  R e d d it, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/c h ro m  e _ e x te n s io n s /c o m  m  e n ts /1 q 1 n 6 v h /i_ b u ilt_ a _ c h ro m
+e _ e x te n s io n _ to _ e x tra c t_ c o d e _ fro m  / 
+43. V id e o  S c re e n s h o t -  C h ro m  e  W  e b  S to re , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://c h ro m  e w e b s to re .g o o g le .c o m  /d e ta il/v id e o - s c re e n s h o t/p p k o ja c k h ib e o g ijp h
+h fn a m  h e m  k lm  ia l? h l= e n  
+44. H o w  d o  I ta k e  a  s c re e n s h o t o f th e  c u rre n t fra m  e  o f a n  h tm  l5  v id e o  th ro u g h  
+c h ro m  e 's  c o n s o le  a n d  c o p y  it to  c lip b o a rd  -  S ta c k  O  v e rfl o w , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /6 7 2 5 7 3 0 3 /h o w - d o - i- ta k e - a - s c re e n s h o t- o f- t
+h e - c u rre n t- fra m  e - o f- a n - h tm  l5 - v id e o - th ro u g h - c h ro m  e  
+45. L o w - L a te n c y  v id e o  s tre a m   w ith o u t te a rs  | b y  L o v e  R o b o ts  to  D e a th  | M  e d iu m  , 3 월 
+9 , 2 0 2 6 에 액세스, 
+h tt p s ://m  e d iu m  .c o m  /@  o le s y a k rin d a c h /lo w - la te nc  y - v id e o - s tre a m  - w ith o u t- te a rs - f
+f0 9 6 e 8 3 d a 8 3  
+46. H o w  to  s e n d  c o n tin u o u s  s tre a m   o f fra m  e s  to  s e rv e r m  o s t e ffi c ie n tly  -  S ta c k  
+O  v e rfl o w , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /5 5 8 7 8 5 2 1 /h o w - to - s e nd   - c o n tin u o u s - s tre a m  -
+o f- fra m  e s - to - s e rv e r- m  o s t- e ffi c ie n tly  
+47. B u ild in g  a  N e w s  F a c t- C h e c k e r A I A g e n t -  Y o u T ub   e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = s e n T 6 h z R 0 m  A  
+48. C la im  ify : E x tra c tin g  h ig h - q u a lity  c la im  s  fro m   la n g ua  g e  m  o d e l o ut  p ut  s  -  M  ic ro s o ft  
+R e s e a rc h , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .m  ic ro s o ft .c o m  /e n - u s /re s e a rc h /v id e o /c la im  ify - e x tra c tin g - h ig h - q u a lity
+- c la im  s - fro m  - la n g u a g e - m  o d e l- o u tp u ts / 
+49. C la im  ify : E x tra c tin g  h ig h - q u a lity  c la im  s  fro m   la n g ua  g e  m  o d e l o ut  p ut  s  -  M  ic ro s o ft  
+R e s e a rc h , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .m  ic ro s o ft .c o m  /e n - u s /re s e a rc h /b lo g /c la im  ify - e x tra c tin g - h ig h - q u a lity -
+c la im  s - fro m  - la n g u a g e - m  o d e l- o u tp u ts / 
+50. Q  u a n tify in g  T ru th fu ln e s s : A  P ro b a b ilis tic  F ra m  e w o rk  fo r A to m  ic  C la im  - B a s e d  
+----------------Page (14) Break----------------
+M  is in fo rm  a tio n  D e te c tio n  -  M  D P I, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .m  d p i.c o m  /2 2 2 7 - 7 3 9 0 /1 3 /1 1 /1 7 7 8  
+51. F A C T - C H E C K E R : A  W  E B  A P P L IC A T IO  N  F O  R  L E V E R A G  IN G   ..., 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s c h o la rw o rk s .lib .c s u s b .e d u /c g i/v ie w c o n te n t.c g i? a rtic le = 3 5 3 2 & c o n te x t= e td  
+52. T ru th  S le u th  &  T re n d  B e n d e r A I A g e n ts  to  fa c t- c h e c k  Y o u T ub   e  v id e o s  &  in fl u e n c e  
+o p in io n s , 3 월 9 , 2 0 2 6 에 액세스, h tt p s ://a rx iv .o rg /h tm  l/2 5 0 7 .1 0 5 7 7 v 2  
+53. A  S u rv e y  o n  A u to m  a tic  C re d ib ility  A s s e s s m  e n t o f T e x tu a l C re d ib ility  S ig n a ls  in  th e  
+E ra  o f L a rg e  L a n g u a g e  M  o d e ls  -  a rX iv , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://a rx iv .o rg /h tm  l/2 4 1 0 .2 1 3 6 0 v 1  
+54. F a c t C h e c k  T o o ls  A P I -  G  o o g le  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e rs .g o o g le .c o m  /fa c t- c h e c k /to o ls /a p i 
+55. G  o o g le  F a c t C h e c k  T o o l A P Is , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://to o lb o x .g o o g le .c o m  /fa c tc h e c k /a p is  
+56. A P Is  E x p lo re r -  G  o o g le  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e rs .g o o g le .c o m  /a p is - e x p lo re r 
+57. K B S  재난정보 A P I, 3 월 9 , 2 0 2 6 에 액세스, h tt p s ://n e w s g a te .k b s .c o .k r/ 
+58. D e b a te - d riv e n  C la im   V e rifi c a tio n  w ith  M  u ltip le  L a rg e  L a ng   ua  g e  M  o d e l A g e n ts  -  
+a rX iv , 3 월 9 , 2 0 2 6 에 액세스, h tt p s ://a rx iv .o rg /h tm  l/2 5 0 7 .1 9 0 9 0 v 2  
+59. P ie c in g  It A ll T o g e th e r: V e rify in g  M  u lti- H o p  M  u ltim  o d a l C la im  s  -  a rX iv , 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://a rx iv .o rg /h tm  l/2 4 1 1 .0 9 5 4 7 v 2  
+60. D e e p fa k e  D e te c tio n  —  R e a lity  D e fe n d e r, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re a lity d e fe n d e r.c o m  / 
+61. A P I &  P ric in g  -  D e e p fa k e  D e te c tio n  A P I -  B itM  in d , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://b itm  in d .a i/p ro d u c t/a p i 
+62. R e a lity  D e fe n d e r L a u n c h e s  P u b lic  A P I a n d  F re e  T ie r to  B ring    E n te rp ris e - G  ra d e  
+D e e p fa k e  D e te c tio n  to  E v e ry  D e v e lo p e r -  P R  N e w s w ire , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .p rn e w s w ire .c o m  /n e w s - re le a s e s /re a lity - d e fe n d e r- la u n c h e s - p u b lic - a
+p i- a n d - fre e - tie r- to - b rin g - e n te rp ris e - g ra d e - d e e p fa k e - d e te c tio n - to - e v e ry - d e v e l
+o p e r- 3 0 2 5 1 7 5 0 3 .h tm  l 
+63. D e e p fa k e  D e te c tio n  A P I fo r Id e n tity  V e rifi c a tio n  -  B io ID , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .b io id .c o m  /d e e p fa k e - d e te c tio n / 
+64. H e lp  id e n tify  p h o n y  p e o p le  o n lin e  w ith  'F a k e  D e te c to r' a  fre e  c h ro m  e  e x te n s io n  
+fro m   V 7  a rtifi c ia l... -  Y o u T u b e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = 0 p fw H Ix A s jQ   
+65. 네이버·카카오·네이트, 악의적 선거 딥페이크 방지 공동선언 -  서울경제, 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://m  .s e d a ily .c o m  /a rtic le /1 3 8 5 4 5 6 1  
+66. W  h a t la te n c y  c h a lle n g e s  a ris e  w h e n  s tre a m  in g  A I d e e p fa k e  v id e o ?  -  M  ilv u s , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://m  ilv u s .io /a i- q u ic k - re fe re n c e /w h a t- la te nc  y - c h a lle n g e s - a ris e - w h e n - s tre a m  i
+n g - a i- d e e p fa k e - v id e o  
+67. G  o o g le  D e p lo y s  O  n - D e v ic e  A I to  T h w a rt S c a m  s  o n  C h ro m  e  a nd    A nd   ro id , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .in fo s e c u rity - m  a g a z in e .c o m  /n e w s /g o o g le - a i- g e m  in i- na  n o - s c a m  s - c h r
+o m  e / 
+68. Y o u T u b e  P o lic ie s  a n d  G  u id e lin e s  -  T ra n s p a re n c y  C e n te r, 3 월 9 , 2 0 2 6 에 액세스, 
+----------------Page (15) Break----------------
+h tt p s ://tra n s p a re n c y .g o o g le /in tl/e n _ u s /o u r- p o lic ie s /p ro d u c t- te rm  s /y o u tub   e / 
+69. A rtifi c ia l In te llig e n c e  | A I o n  C h ro m  e  -  C h ro m  e  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 
+액세스, h tt p s ://d e v e lo p e r.c h ro m  e .c o m  /d o c s /a i 
+70. G  e t S ta rte d  w ith  C h ro m  e  B u ilt- in  A I : A c c e s s  G  e m  ini  N a no    M  o d e l lo c a lly  -  
+M  e d iu m  , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://m  e d iu m  .c o m  /g o o g le - c lo u d /g e t- s ta rte d - w ith - c h ro m  e - b u ilt- in - a i- a c c e s s - g
+e m  in i- n a n o - m  o d e l- lo c a lly -1 1 b a c f2 3 5 5 1 4  
+71. T h e  P ro m  p t A P I | A I o n  C h ro m  e  -  C h ro m  e  fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e r.c h ro m  e .c o m  /d o c s /a i/p ro m  p t- a p i 
+72. F irs t- tim  e  C h ro m  e  E x te n s io n  d e v e lo p e r's  jo u rn e y  s e tti ng    u p  G  e m  in i N a n o  a n d  
+P ro m  p t A P I, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://g ro u p s .g o o g le .c o m  /a /c h ro m  ium    .o rg /g /c h ro m  e - a i- d e v - p re v ie w - d is c u s s /c /8
+M  6 m  L 5 u O  n B Q   
+73. G  e m  in i in  C h ro m  e  —  A I a s s is ta n c e , rig h t in  y o ur   b ro w s e r, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://g e m  in i.g o o g le /o v e rv ie w /g e m  in i- in - c h ro m  e / 
+74. G  e m  in i™ fo r C h ro m  e  -  C h ro m  e  W  e b  S to re , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://c h ro m  e w e b s to re .g o o g le .c o m  /d e ta il/g e m  in i- fo r- c h ro m  e /a a jjg d p o fh  h c jm  jo
+o m  b jd fe p p ln d h g c p  
+75. L o n g  c o n te x t | G  e m  in i A P I -  G  o o g le  A I fo r D e v e lo p e rs , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://a i.g o o g le .d e v /g e m  in i- a p i/d o c s /lo n g - c o n te x t 
+76. W  h a t is  G  e m  in i's  re a l c o n te x t w in d o w  s iz e ?  : r/B a rd  -  R e d d it, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re d d it.c o m  /r/B a rd /c o m  m  e n ts /1 q r8 lk p /w h a t_ is _ g e m  in is _ re a l_ c o n te x t_
+w in d o w _ s iz e / 
+77. C o n te x t w in d o w  s iz e  o r fi le  in g e s tio n  is s ue   s  w ith  G  e m  ini  -  G  o o g le  H e lp , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://s u p p o rt.g o o g le .c o m  /g e m  in i/th re a d /3 9 5 4 9 7 2 5 0 /c o n te x t- w in d o w - s iz e - o r- fi l
+e - in g e s tio n - is s u e s - w ith - g e m  in i? h l= e n  
+78. T ra n s fo rm  e rs .js  -  H u g g in g  F a c e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://h u g g in g fa c e .c o /d o c s /tra n s fo rm  e rs .js /in d e x  
+79. T ra n s fo rm  e rs .js : S ta te - o f- th e - a rt M  a c h in e  L e a rni ng    fo r th e  w e b  -  Y o u T u b e , 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = n 1 8 L rb o 8 V U 8  
+80. ta n ta ra /tra n s fo rm  e rs .js - c h ro m  e : C h ro m  e  e x te n s io n  fo r ru nni  ng    G  e ne   ra tiv e  A I in  
+y o u r b ro w s e r lo c a lly  -  G  itH u b , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://g ith u b .c o m  /ta n ta ra /tra n s fo rm  e rs .js - c h ro m  e  
+81. U s in g  T ra n s fo rm  e rs .js  fo r A I in  th e  B ro w s e r -  R a y m  o n d  C a m  d e n , 3 월 9 , 2 0 2 6 에 
+액세스, 
+h tt p s ://w  w  w .ra y m  o n d c a m  d e n .c o m  /2 0 2 4 /1 2 /0 3 /u s in g - tra n s fo rm  e rs js - fo r- a i- in - th e
+- b ro w s e r 
+82. H o w  a n  A lg o rith m   C a n  D is tin g u is h  B e tw e e n  F a k e  a nd    R e a l N e w s  -  G  o v T e c h , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .g o v te c h .c o m  /c o m  p u tin g /h o w - a n - a lg o rith m  - c a n - d is tin g u is h - b e tw e e
+n - fa k e - a n d - re a l- n e w s .h tm  l 
+83. In te llig e n t w e b  a rc h iv in g  a n d  ra n k in g  o f fa k e  ne   w s  u s in g  m  e ta d a ta - d riv e n  
+c re d ib ility  a s s e s s m  e n t a n d  m  a c h in e  le a rn in g  -  P M  C , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://p m  c .n c b i.n lm  .n ih .g o v /a rtic le s /P M  C 1 2 7 4 9 3 1 5 / 
+----------------Page (16) Break----------------
+84. S c o re  A g g re g a tio n  v ia  S p e c tra l M  e th o d  -  IJ C A I, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .ijc a i.o rg /p ro c e e d in g s /2 0 1 7 /0 0 6 4 .p d f 
+85. P e rfo rm  a n c e  E v a lu a tio n  o f R a tin g  A g g re g a tio n  A lg o rith m  s  in  R e p u ta tio n  S y s te m  s  
+-  W  e is o n g  S h i, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p ://w e is o n g s h i.o rg /p a p e rs /lia n g 0 5-  ra tin g - a g g re g a tio n .p d f 
+86. G  e tt in g  M  o re  W  is d o m   fro m   th e  C ro w d : W  h e n  W  e ig h tin g  Ind   iv id ua  l J ud   g m  e n ts  
+R e lia b ly  Im  p ro v e s  A c c u ra c y  o r J u s t A d d s  N o is e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .c m  u .e d u /d ie tric h /s d s /d o c s /g o lm  a n /g e tt in g - m  o re - w is d o m  - fro m  - th e -
+c ro w d .p d f 
+87. C re d ib ility  a n d  T ra n s p a re n c y  o f N e w s  S o u rc e s : D a ta  C o lle c tio n  a nd    F e a tu re  
+A n a ly s is  -  U n iv e rs ity  o f S h e ffi e ld , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s h e ffi e ld .a c .u k /s ite s /d e fa u lt/fi le s /2 0 2 2 - 0 4 /p a p e r3 .p d f 
+88. M  e th o d o lo g y  | A d  F o n te s  M  e d ia , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://a d fo n te s m  e d ia .c o m  /m  e th o d o lo g y / 
+89. H o w  to  K n o w  if a  S o u rc e  Is  C re d ib le  -  P u rd u e  G  lo b a l, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .p u rd u e g lo b a l.e d u /b lo g /o n lin e - le a rni n g /c re d ib le - a c a d e m  ic - s o u rc e s / 
+90. P re d ic tin g  N e w s  S o u rc e  C re d ib ility  -  U ni v e rs ity  o f S h e ffi e ld , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s h e ffi e ld .a c .u k /s ite s /d e fa u lt/fi le s /2 0 2 2 - 0 4 /T T O  P a p e rF in a l.p d f 
+91. R e lia b ility  E s tim  a tio n  o f N e w s  M  e d ia  S o u rc e s : B ird s  o f a  F e a th e r F lo c k  T o g e th e r -  
+G  itH u b , 3 월 9 , 2 0 2 6 에 액세스, h tt p s ://g ith u b .c o m  /id ia p /N e w s - M  e d ia - R e lia b ility  
+92. L z d n l/c re d ib ility S c o re  -  G  itH u b , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://g ith u b .c o m  /L z d n l/c re d ib ility S c o re  
+93. m  a rtin 2 2 6 /c re d ib ility : C re d ib ility  h e lp s  y o u  re s e a rc h  w ith  c o n fi d e n c e  b y  u s in g  
+L L M  s  a n d  k e y  m  e tric s  to  a s s e s s  th e  c re d ib ility  o f w e b s ite s . -  G  itH u b , 3 월 9 , 
+2 0 2 6 에 액세스, h tt p s ://g ith u b .c o m  /m  a rtin 2 2 6 /c re d ib ility  
+94. E x p la in a b le  B io m  e d ic a l C la im   V e rifi c a tio n  w ith  L a rg e  L a ng   ua  g e  M  o d e ls , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .d fk  i.d e /fi le a d m  in /u s e r_ u p lo a d /im  p o rt/1 5 7 7 7 _ e x p la in a b le _ b io m  e d ic a l_
+c la im  _ v e rifi c a tio n _ w ith _ L L M  s .p d f 
+95. (P D F ) A I a n d  C o rru p tio n : L e g a l L ia b ility  in  A lg o rith m  ic  D e c is io n - M  a k in g  -  
+R e s e a rc h G  a te , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .re s e a rc h g a te .n e t/p u b lic a tio n /3 9 4 9 1 2 7 3 7 _ A I_ a n d _ C o rru p tio n _ L e g a l_ L i
+a b ility _ in _ A lg o rith m  ic _ D e c is io n - M  a k in g  
+96. W  h a t is  th e  le g a lity  o f s c ra p in g  Y o u T ub   e  d a ta ?  [c lo s e d ] -  S ta c k  O  v e rfl o w , 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /3 0 5 8 7 3 9 0 /w h a t- is - th e - le g a lity - o f- s c ra p in g -
+y o u tu b e - d a ta  
+97. Y o u T u b e  A P I S e rv ic e s  -  D e v e lo p e r P o lic ie s , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://d e v e lo p e rs .g o o g le .c o m  /y o u tub   e /te rm  s /d e v e lo p e r- p o lic ie s  
+98. Y o u r c o n te n t &  th ird - p a rty  tra in in g  -  Y o uT  u b e  H e lp , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s u p p o rt.g o o g le .c o m  /y o u tu b e /a n s w e r/1 5 5 0 9 9 4 5?  h l= e n  
+99. T e rm  s  o f S e rv ic e  -  Y o u T u b e , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .y o u tu b e .c o m  /s ta tic ? te m  p la te = te rm  s  
+100.  Is  it le g a l to  d o w n lo a d  Y o u tu b e  c a p tio ns  , p e rfo rm   s o m  e  a na  ly tic a l ta s k s  o n  
+th e m   a n d  th e n  d is p la y  th e  re s u lts  o n  y o ur   o w n  w e b s ite ? , 3 월 9 , 2 0 2 6 에 액세스, 
+----------------Page (17) Break----------------
+h tt p s ://la w .s ta c k e x c h a n g e .c o m  /q u e s tio n s /5 3 7 1 2 /is - it- le g a l- to - d o w n lo a d - y o u tu b e
+- c a p tio n s - p e rfo rm  - s o m  e - a n a ly tic a l- ta s k s - o n - th e m   
+101.  얼굴이나목소리표현방식관리및통제 높은수준의비가시성,보안과견고성강화 
+한국IP 수출은한류콘, 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .c o p y rig h t.o r.k r/in fo rm  a tio n - m  a te ria ls /tre n d /tm  is /d o w n lo a d .d o ? b rd c ts
+n o = 5 3 3 5 7 & b rd c ts fi le n o = 2 4 1 5 8  
+102.  Y o u T u b e  D a ta  A P I v 3  Is  th e re  a  ris k ?  -  S ta c k  O  v e rfl o w , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://s ta c k o v e rfl o w .c o m  /q u e s tio n s /5 5 2 3 5 1 0 8 /y o u tub   e - d a ta - a p i- v 3 - is - th e re - a - ri
+s k  
+103.  가짜뉴스에 대한 규제법적 검토 -  언론관련법 및 정보통신망법상 규제를 
+중심으로 -  | D B p ia , 3 월 9 , 2 0 2 6 에 액세스, 
+h tt p s ://w  w  w .d b p ia .c o .k r/jo u rn a l/a rtic le D e ta il? no   d e Id = N O  D E 0 9 3 1 3 5 6 0  
+104.  생성형 A I 서비스제공자의 법적 책임과 입법적 시사점 -  한국법제연구원, 3 월 9 , 
+2 0 2 6 에 액세스, 
+h tt p s ://k lri.re .k r/P la tf o rm  /d a ta /e d 4 5 a 9 3 f- 8 1 4 a - 4 7 6 1 - 8 0 a d - 6 0 4 c c 1 8 d 1 9 e 4 /9 c e a 2 5 5
+3 - 8 c 0 0 - 4 4 5 8 - 9 d d 0 - c e 9 c 8 7 0 a 1 6 3 f 
+105.  G  e t In s ig h ts  fro m   a n y  Y o u T u b e  V id e o  u s in g  In fra N o d u s  A I B ro w s e r E x te n s io n , 
+3 월 9 , 2 0 2 6 에 액세스, h tt p s ://w  w  w .y o u tu b e .c o m  /w a tc h ? v = C 7 fC 3 k n C ns  Q   
+----------------Page (18) Break----------------

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "NOCAP - Fake News Detector",
+  "version": "1.0",
+  "description": "On-device AI credibility indicator for YouTube videos.",
+  "action": {
+    "default_title": "Open NOCAP"
+  },
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content.ts-BzW2Fsq6.js"
+      ],
+      "matches": [
+        "*://*.youtube.com/watch*"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "resources": [
+        "shadow-ui.js",
+        "assets/content.ts-BzW2Fsq6.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ]
+}
