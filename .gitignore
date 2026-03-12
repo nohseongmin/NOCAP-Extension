@@ -1,21 +1,21 @@
-# Ignored files
-*.pdf
-out.txt
-package-lock.json
-
-# Node modules
+# Node
 node_modules/
+dist/
+dist-zip/
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+python-embed/
 
-# OS generated files
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+
+# Build
+*.js
+*.js.map
+out-tsc/

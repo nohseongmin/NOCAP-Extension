@@ -13,7 +13,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-BzW2Fsq6.js"
+        "assets/content.ts-CK9HWK5m.js"
       ],
       "matches": [
         "*://*.youtube.com/watch*"
@@ -28,14 +28,11 @@
       ],
       "resources": [
         "shadow-ui.js",
-        "assets/content.ts-BzW2Fsq6.js"
+        "content.css",
+        "assets/content.ts-CK9HWK5m.js"
       ],
       "use_dynamic_url": false
     }
   ],
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ]
+  "permissions": []
 }

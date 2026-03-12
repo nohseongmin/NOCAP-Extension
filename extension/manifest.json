@@ -23,16 +23,13 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "shadow-ui.js"
+                "shadow-ui.js",
+                "content.css"
             ],
             "matches": [
                 "*://*.youtube.com/*"
             ]
         }
     ],
-    "permissions": [
-        "storage",
-        "activeTab",
-        "scripting"
-    ]
+    "permissions": []
 }
