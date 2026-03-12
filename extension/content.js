@@ -78,7 +78,8 @@ async function runAnalysis(shadowRoot) {
         const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
         const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
         // Aggregation
-        const finalResult = calculateCredibility(Math.min(aiFactScore, heuristicRes.factScore), heuristicRes.sourceScore, 30);
+        const finalResult = calculateCredibility(Math.max(aiFactScore, heuristicRes.factScore), // Strongest optimism wins for neutral videos
+        heuristicRes.sourceScore, 30);
         lastAnalysisResult = finalResult;
         isAnalyzing = false;
         renderUI(shadowRoot, isPremiumLocal, finalResult, false);
@@ -92,11 +93,13 @@ async function runAnalysis(shadowRoot) {
 async function analyzeClaimsWithLocalAI(text) {
     const ai = window.ai;
     if (!ai)
-        return 85; // Optimistic fallback if AI missing but user has text
-    const prompt = `텍스트를 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요. 
-  조건 1: 일상적인 브이로그, 여행 정보, 정보 전달 영상은 85-100점. 
-  조건 2: 근거 없는 음모론, 허경영, 지구평평설, 혐오 표현 등은 0-40점. 
-  분석 텍스트: "${text}"`;
+        return 90; // Higher baseline
+    const prompt = `주어진 텍스트를 정밀 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요.
+  - 가이드라인:
+    1. 일상 브이로그, 여행기, 맛집 탐방, 단순 정보 전달: 90~100점.
+    2. 과학적 근거가 희박하거나 음모론(지구평평설 등), 사이비 교주(허경영 등) 찬양, 사회적 선동: 0~30점.
+    3. 중립적이거나 출처가 불분명한 단순 주장: 60~70점.
+  - 분석 대상: "${text}"`;
     // New API
     if (ai.languageModel) {
         try {
@@ -197,15 +200,8 @@ function renderUI(shadowRoot, isPremium, result, isLoading) {
                 renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
             }
         }, isPremium ? 'PRO' : 'BASIC')), h('div', { className: 'score-container' }, h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`), h('div', { className: 'conclusion' }, isLoading ? "판독 중..." : (result?.conclusion || "분석 버튼을 눌러주세요."))), h('div', { className: 'details-section' }, h('div', { className: isPremium ? '' : 'premium-blur' }, h('div', { className: 'details-title' }, '판독 근거'), ...(result?.reasons || []).map(r => h('div', { className: 'reason-item' }, h('span', {}, '📍'), r.text))), 
-        // Restore Premium Overlay
-        !isPremium ? h('div', { className: 'premium-overlay' }, h('div', { className: 'premium-lock-icon' }, '🔒'), h('button', {
-            className: 'premium-btn',
-            onClick: (e) => {
-                e.stopPropagation();
-                isPremiumLocal = true;
-                renderUI(shadowRoot, true, lastAnalysisResult, isAnalyzing);
-            }
-        }, '잠금 해제')) : null), h('div', { className: 'disclaimer-section' }, h('div', { className: 'disclaimer-text' }, "AI 모델 기반 참고용 데이터입니다.")));
+        // Restore Premium Overlay with Text
+        !isPremium ? h('div', { className: 'premium-overlay' }, h('div', { className: 'premium-lock-icon' }, '🔒'), h('span', { className: 'premium-text' }, '프리미엄 요금제')) : null), h('div', { className: 'disclaimer-section' }, h('div', { className: 'disclaimer-text' }, "면책공고: 본 결과는 AI 알고리즘에 의해 생성된 참고용 데이터로, 실제 사실과 다를 수 있습니다. 서비스 제공자는 결과의 정확성을 보증하지 않으며, 이용으로 인한 명예훼손 등 모든 법적 책임은 이용자 본인에게 있습니다. 단순 보조 지표로만 활용하십시오.")));
         containerDiv.appendChild(mainPanel);
     }
     shadowRoot.appendChild(containerDiv);

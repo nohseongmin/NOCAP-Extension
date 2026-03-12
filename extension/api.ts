@@ -42,7 +42,7 @@ export async function mockAnalyzeCloud(request: FactCheckRequest): Promise<FactC
     });
 
     return {
-        factScore: Math.max(10, 65 - penalty),
-        sourceScore: Math.max(10, 60 - penalty)
+        factScore: Math.max(10, 85 - penalty),
+        sourceScore: Math.max(10, 80 - penalty)
     };
 }
