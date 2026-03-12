@@ -6,79 +6,43 @@ export interface FactCheckRequest {
 
 export interface FactCheckResponse {
     factScore: number;
-    visualScore: number;
     sourceScore: number;
 }
 
-const getStringHash = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-    }
-    return Math.abs(hash);
-};
-
 /**
- * Edge-based Analysis (Local Only)
- * Uses hashing and local AI to determine credibility without external server costs.
+ * Enhanced Heuristic-based Analysis 
+ * Uses regex and international keywords to detect common conspiracy patterns.
  */
 export async function mockAnalyzeCloud(request: FactCheckRequest): Promise<FactCheckResponse> {
-    console.log('[API] Starting Edge Analysis (Zero Cost Mode)...');
+    console.log('[API] Starting Enhanced Heuristic Analysis...');
 
-    // Simulate short processing time
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const hash = getStringHash(request.textContext);
+    const text = (request.textContext || "").trim();
     
-    // Heuristic Score based on text content hash and length
-    // In a real production edge version, this would use a more complex local NLP model or window.ai
-    const pseudoRandom = (hash % 50) + 40; // 40~90 range
+    // 1. Structural Penalty
+    let penalty = 0;
+    const exclamationMatches = text.match(/!/g);
+    if (exclamationMatches && exclamationMatches.length > 5) penalty += 15;
+    
+    // 2. International Conspiracy Regex
+    // Matches variations of: Flat Earth, Deep State, Fake News, Secret society, etc.
+    const conspiracyPatterns = [
+        /지구\s*평평/i, /flat\s*earth/i,
+        /그림자\s*정부/i, /shadow\s*government/i, /deep\s*state/i,
+        /딥\s*스테이트/i, /음모론/i, /conspiracy/i,
+        /조작\s*설/i, /fake\s*news/i, /가짜\s*뉴스/i,
+        /비밀\s*리에/i, /secretly/i, /진실을\s*숨긴/i,
+        /허경영/i, /하늘궁/i, /사이비/i
+    ];
 
-    // Simulated Visual score (Deepfake detection placeholder)
-    const isDeepfakeMock = (hash % 100) < 10; 
-    const visualScore = isDeepfakeMock ? Math.floor((hash % 15) + 5) : Math.floor((hash % 15) + 85);
+    conspiracyPatterns.forEach(pattern => {
+        if (pattern.test(text)) {
+            console.log(`[Heuristic] Flagged by pattern: ${pattern}`);
+            penalty += 30;
+        }
+    });
 
     return {
-        factScore: pseudoRandom,
-        visualScore: visualScore,
-        sourceScore: 70 + (hash % 20)
+        factScore: Math.max(10, 65 - penalty),
+        sourceScore: Math.max(10, 60 - penalty)
     };
-}
-
-
-
-/**
- * Local AI Filter using Chrome's Built-in AI (window.ai)
- * Fallbacks to simple regex if window.ai is not available.
- */
-export async function analyzeLocalSentiment(text: string): Promise<number> {
-    // Safely check for window.ai since 'window' is not defined in Service Workers
-    const ai = typeof window !== 'undefined' ? (window as any).ai : undefined;
-
-    if (ai && ai.asTextSession) {
-        try {
-            const session = await ai.asTextSession();
-            const prompt = `Analyze the emotional intensity and clickbait nature of this text on a scale of 0 to 100 (100 being highly inflammatory/clickbait, 0 being completely neutral). Return ONLY the integer number. Text: "${text}"`;
-            const result = await session.prompt(prompt);
-
-            const score = parseInt(result.trim(), 10);
-            return isNaN(score) ? 30 : score; // Default to 30 if parsing fails
-        } catch (e) {
-            console.warn("[Local AI] Error using window.ai, falling back to heuristic:", e);
-        }
-    } else {
-        console.warn("[Local AI] window.ai not available. Please enable Chrome flags. Using heuristic fallback.");
-    }
-
-    // Heuristic fallback
-    let score = 0;
-    const inflammatoryWords = ['충격', '경악', '분노', '배신', '폭로', '단독', '거짓말', '조작', '진실', '무조건'];
-    inflammatoryWords.forEach(word => {
-        if (text.includes(word)) score += 15;
-    });
-    const exclamationCount = (text.match(/!/g) || []).length;
-    score += (exclamationCount * 10);
-
-    return Math.min(100, score);
 }

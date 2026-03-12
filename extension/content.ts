@@ -1,72 +1,55 @@
 // content.js - 유튜브 화면에 UI를 주입하는 역할
-import { AnalysisResult } from './scoring';
+import { AnalysisResult, calculateCredibility } from './scoring';
+import { mockAnalyzeCloud } from './api';
 
-console.log('NOCAP: Content script loaded. Injecting UI element directly...');
+console.log('NOCAP: Content script loaded (v1.6.0).');
+
+// UI State (Persistent across small DOM changes)
+let isWidgetCollapsed = true;
+let isAnalyzing = false;
+let lastAnalysisResult: AnalysisResult | null = null;
+let currentTextBuffer: string = "";
+let isPremiumLocal = false; // BASIC by default
 
 function injectUI() {
-  // 현재 URL이 유튜브 영상 시청 페이지(/watch)인지 확인
   const isWatchPage = window.location.pathname === '/watch';
-
   let container = document.getElementById('nocap-extension-root');
 
   if (!isWatchPage) {
-    // 영상 시청 페이지가 아니면 UI 숨김
     if (container) container.style.display = 'none';
     return;
   }
 
-  // 영상 시청 페이지라면 UI를 보이게 처리
+  // If container exists, just ensure it's visible and attached
   if (container) {
     container.style.display = 'block';
-    // Reset UI and Pipeline on SPA navigation
-    if (container.shadowRoot) {
-      currentTextBuffer = "";
-      renderUI(container.shadowRoot, false, null, true);
-      startAnalysisPipeline(container.shadowRoot);
+    if (!document.body.contains(container)) {
+      document.body.appendChild(container);
     }
     return;
   }
 
-  // 아직 생성되지 않았다면 새로 생성
+  // Create new container
   container = document.createElement('div');
   container.id = 'nocap-extension-root';
-
-  // 유튜브 Z-index 간섭 방지 (항상 최상단)
   container.style.position = 'fixed';
   container.style.top = '65px';
-  container.style.right = '41px';
+  container.style.right = '103px';
   container.style.zIndex = '9999999';
-  // SPA 네비게이션 시 포인터 이벤트 허용 확인
   container.style.pointerEvents = 'auto';
 
-  const shadowRoot = container.attachShadow({ mode: 'closed' }); // Security: Prevent page scripts from accessing the widget internals
-
-  // Initial render (Loading state)
-  renderUI(shadowRoot, false, null, true);
-
+  const shadowRoot = container.attachShadow({ mode: 'open' }); // Changed to open for better debugging/stability
+  renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
   document.body.appendChild(container);
 
-  // Start analysis pipeline
-  startAnalysisPipeline(shadowRoot);
+  startCaptionScraper();
 }
 
 let activeObserver: MutationObserver | null = null;
-let currentTextBuffer: string = "";
-let analysisTimeoutId: number | null = null;
 
-async function startAnalysisPipeline(shadowRoot: ShadowRoot) {
-  console.log('[NOCAP] Starting Analysis Pipeline...');
-
-  // Reset state
-  currentTextBuffer = "";
-  if (analysisTimeoutId) {
-    clearTimeout(analysisTimeoutId);
-    analysisTimeoutId = null;
-  }
-
-  // 1. Setup subtitle scraper
+function startCaptionScraper() {
   if (activeObserver) activeObserver.disconnect();
-
+  
   activeObserver = new MutationObserver((mutations) => {
     for (let m of mutations) {
       if (m.type === 'childList') {
@@ -75,9 +58,8 @@ async function startAnalysisPipeline(shadowRoot: ShadowRoot) {
           const text = Array.from(captionElements).map(el => (el as HTMLElement).innerText).join(' ');
           if (text && !currentTextBuffer.includes(text)) {
             currentTextBuffer += " " + text;
-            // Keep buffer reasonable size (~500 chars)
-            if (currentTextBuffer.length > 500) {
-              currentTextBuffer = currentTextBuffer.substring(currentTextBuffer.length - 500);
+            if (currentTextBuffer.length > 1000) {
+              currentTextBuffer = currentTextBuffer.substring(currentTextBuffer.length - 1000);
             }
           }
         }
@@ -85,60 +67,83 @@ async function startAnalysisPipeline(shadowRoot: ShadowRoot) {
     }
   });
 
-  // Observe the whole player body for caption box injections
   const player = document.getElementById('ytd-player');
   if (player) {
     activeObserver.observe(player, { childList: true, subtree: true });
   }
-
-  // 2. Wait 2.5 seconds to gather captions or use fallback text, then analyze
-  analysisTimeoutId = window.setTimeout(() => {
-    analysisTimeoutId = null;
-    let textToAnalyze = currentTextBuffer.trim();
-    
-    // Fallback if no captions are active/found, use the video title to ensure dynamic scores per video
-    if (!textToAnalyze) {
-      const videoTitle = document.title || "Unknown Video";
-      // Generate a string with variable length based on the title to randomize the mock score
-      const randomPadding = Array(Math.floor(Math.random() * 50) + 10).fill("데이터").join(" ");
-      textToAnalyze = `[자막 없음] 영상 제목 기반 임시 분석: ${videoTitle}. ${randomPadding}`;
-    }
-
-    try {
-      chrome.runtime.sendMessage({
-        action: 'ANALYZE_CONTENT',
-        payload: { text: textToAnalyze }
-      }, (response) => {
-        console.log('[NOCAP] Background response received:', response);
-        if (chrome.runtime.lastError) {
-          console.error('[NOCAP] Runtime error (Background may be inactive):', chrome.runtime.lastError);
-          renderUI(shadowRoot, false, null, false);
-          return;
-        }
-        if (!response) {
-          console.error('[NOCAP] Received empty response from background.');
-          renderUI(shadowRoot, false, null, false);
-          return;
-        }
-        if (!response.success) {
-          console.error('[NOCAP] Pipeline error in background:', response.error);
-          renderUI(shadowRoot, false, null, false);
-          return;
-        }
-        
-        // Update UI with result
-        console.log('[NOCAP] Updating UI with score:', response.result.overallScore);
-        renderUI(shadowRoot, false, response.result, false);
-      });
-    } catch (e) {
-      console.error('[NOCAP] sendMessage error:', e);
-      renderUI(shadowRoot, false, null, false);
-    }
-  }, 2500);
 }
 
+async function runAnalysis(shadowRoot: ShadowRoot) {
+  if (isAnalyzing) return;
+  
+  isAnalyzing = true;
+  renderUI(shadowRoot, isPremiumLocal, null, true);
 
-// DOM 엘리먼트 생성 헬퍼 함수 (innerHTML 우회 및 XSS 방어)
+  await new Promise(r => setTimeout(r, 800)); // Wait for captions
+
+  let textToAnalyze = currentTextBuffer.trim();
+  if (!textToAnalyze) {
+    const videoTitle = document.title || "Unknown Video";
+    textToAnalyze = `[자막 없음] 영상 제목: ${videoTitle}`;
+  }
+
+  console.log('[NOCAP] Analyzing text:', textToAnalyze);
+
+  try {
+    const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
+    const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
+    
+    // Aggregation
+    const finalResult = calculateCredibility(
+      Math.min(aiFactScore, heuristicRes.factScore),
+      heuristicRes.sourceScore,
+      30
+    );
+    
+    lastAnalysisResult = finalResult;
+    isAnalyzing = false;
+    renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+  } catch (e) {
+    console.error('[NOCAP] Analysis error:', e);
+    isAnalyzing = false;
+    renderUI(shadowRoot, isPremiumLocal, null, false);
+  }
+}
+
+async function analyzeClaimsWithLocalAI(text: string): Promise<number> {
+  const ai = (window as any).ai;
+  if (!ai) return 85; // Optimistic fallback if AI missing but user has text
+
+  const prompt = `텍스트를 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요. 
+  조건 1: 일상적인 브이로그, 여행 정보, 정보 전달 영상은 85-100점. 
+  조건 2: 근거 없는 음모론, 허경영, 지구평평설, 혐오 표현 등은 0-40점. 
+  분석 텍스트: "${text}"`;
+
+  // New API
+  if (ai.languageModel) {
+    try {
+      const caps = await ai.languageModel.capabilities();
+      if (caps.available === 'no') return 85;
+      const session = await ai.languageModel.create();
+      const res = await session.prompt(prompt);
+      const score = parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
+      session.destroy();
+      return score;
+    } catch (e) { console.error("New AI API failure:", e); }
+  }
+
+  // Legacy API
+  if (ai.asTextSession) {
+    try {
+      const session = await ai.asTextSession();
+      const res = await session.prompt(prompt);
+      return parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
+    } catch (e) { console.error("Legacy AI API failure:", e); }
+  }
+
+  return 85;
+}
+
 function h(tag: string, props: any, ...children: any[]) {
   const el = document.createElement(tag);
   if (props) {
@@ -146,9 +151,6 @@ function h(tag: string, props: any, ...children: any[]) {
       if (key === 'className') el.className = val as string;
       else if (key === 'id') el.id = val as string;
       else if (key === 'style') el.style.cssText = val as string;
-      // Security: Block script execution vectors
-      else if (key === 'innerHTML' || key === 'outerHTML') continue; 
-      else if (key === 'href' && (val as string).toLowerCase().trim().startsWith('javascript:')) continue;
       else if (key.startsWith('on') && typeof val === 'function') {
         el.addEventListener(key.substring(2).toLowerCase(), val as EventListenerOrEventListenerObject);
       }
@@ -158,7 +160,6 @@ function h(tag: string, props: any, ...children: any[]) {
   children.forEach(child => {
     if (!child && child !== 0) return;
     if (typeof child === 'string' || typeof child === 'number') {
-      // Security: Text content is automatically escaped by createTextNode, preventing XSS injection
       el.appendChild(document.createTextNode(child.toString()));
     } else if (Array.isArray(child)) {
       child.forEach(c => c && el.appendChild(c));
@@ -169,116 +170,114 @@ function h(tag: string, props: any, ...children: any[]) {
   return el;
 }
 
-// 위젯 축소/확장 상태 관리용 전역 변수
-let isWidgetCollapsed = false;
-
 function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisResult | null, isLoading: boolean) {
-  let score = 0;
-  let color = '#a1a1aa'; // Gray (Loading)
-  let conclusion = "영상을 분석 중입니다...";
-  let reasoning: Array<{ type: string, text: string }> = [];
+  let score = result?.overallScore || 0;
+  let color = score >= 80 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
+  if (!result && !isLoading) color = '#a1a1aa';
 
-  if (result && !isLoading) {
-    score = result.overallScore;
-    conclusion = result.conclusion;
-    reasoning = result.reasons;
-    
-    // Determine color based on score
-    if (score >= 80) color = '#10b981'; // Green
-    else if (score >= 50) color = '#f59e0b'; // Orange
-    else color = '#ef4444'; // Red
-  }
-
-  // shadowRoot 초기화
   while (shadowRoot.firstChild) {
     shadowRoot.removeChild(shadowRoot.firstChild);
   }
 
-  // Load external stylesheet instead of inline styles for CSP compliance
-  const linkEl = document.createElement('link');
-  linkEl.rel = 'stylesheet';
-  linkEl.href = chrome.runtime.getURL('content.css');
+  const linkEl = h('link', { rel: 'stylesheet', href: chrome.runtime.getURL('content.css') });
   shadowRoot.appendChild(linkEl);
 
-  // 상세 팩트체크 리스트
-  const reasonsNodes = reasoning.map(r =>
-    h('div', { className: 'reason-item' },
-      h('span', {}, (r.type === 'penalty' || r.type === 'fact') ? '🚨' : '✅'),
-      r.text
-    )
-  );
-
-  // 전체 UI 위젯 트리 생성
-  const nocapWidget = h('div', {
+  const containerDiv = h('div', {
     className: isWidgetCollapsed ? 'nocap-widget collapsed' : 'nocap-widget',
-    title: isWidgetCollapsed ? 'NOCAP 판독기 열기' : ''
-  },
-    // 축소 아이콘 (숨김 상태일 때만 보임)
-    h('div', { className: 'collapsed-icon' }, 'N'),
+    onClick: () => {
+      if (isWidgetCollapsed) {
+        isWidgetCollapsed = false;
+        renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
+        if (!lastAnalysisResult && !isAnalyzing) runAnalysis(shadowRoot);
+      }
+    }
+  });
 
-    // Header
-    h('div', { className: 'header' },
-      h('div', { className: 'header-left' },
-        h('button', {
-          className: 'close-btn',
-          title: '판독기 숨기기',
-          onClick: (e: Event) => {
-            e.stopPropagation(); // 위젯 전체 클릭 방지
-            isWidgetCollapsed = true;
-            renderUI(shadowRoot, isPremium, result, isLoading);
-          }
-        }, '×'),
-        h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
+  // Icon always present
+  containerDiv.appendChild(h('div', { className: 'collapsed-icon' }, 'N'));
+
+  if (!isWidgetCollapsed) {
+    const mainPanel = h('div', { className: 'main-panel' },
+      h('div', { className: 'header' },
+        h('div', { className: 'header-left' },
+          h('button', {
+            className: 'close-btn',
+            onClick: (e: Event) => {
+              e.stopPropagation();
+              isWidgetCollapsed = true;
+              renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
+            }
+          }, '×'),
+          h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
+        ),
+        h('button', { 
+            className: 'toggle-btn',
+            onClick: (e: Event) => {
+               e.stopPropagation();
+               isPremiumLocal = !isPremiumLocal;
+               renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
+            }
+        }, isPremium ? 'PRO' : 'BASIC')
       ),
-      h('button', {
-        className: 'toggle-btn',
-        id: 'devToggle',
-        onClick: (e: Event) => {
-          e.stopPropagation();
-          renderUI(shadowRoot, !isPremium, result, isLoading);
-        }
-      },
-        isPremium ? 'PRO 모드 (테스트)' : 'BASIC 모드 (테스트)'
+      h('div', { className: 'score-container' },
+        h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`),
+        h('div', { className: 'conclusion' }, isLoading ? "판독 중..." : (result?.conclusion || "분석 버튼을 눌러주세요."))
+      ),
+      h('div', { className: 'details-section' },
+        h('div', { className: isPremium ? '' : 'premium-blur' },
+          h('div', { className: 'details-title' }, '판독 근거'),
+          ...(result?.reasons || []).map(r => h('div', { className: 'reason-item' }, h('span', {}, '📍'), r.text))
+        ),
+        // Restore Premium Overlay
+        !isPremium ? h('div', { className: 'premium-overlay' },
+          h('div', { className: 'premium-lock-icon' }, '🔒'),
+          h('button', {
+            className: 'premium-btn',
+            onClick: (e: Event) => {
+              e.stopPropagation();
+              isPremiumLocal = true;
+              renderUI(shadowRoot, true, lastAnalysisResult, isAnalyzing);
+            }
+          }, '잠금 해제')
+        ) : null
+      ),
+      h('div', { className: 'disclaimer-section' },
+        h('div', { className: 'disclaimer-text' }, "AI 모델 기반 참고용 데이터입니다.")
       )
-    ),
-    // Score Container
-    h('div', { className: 'score-container' },
-      h('div', { className: 'score-circle', style: '--score: ' + score + '%; --color: ' + color }, score + '%'),
-      h('div', { className: 'conclusion' }, conclusion)
-    ),
-    // Details Section
-    h('div', { className: 'details-section' },
-      h('div', { className: isPremium ? '' : 'premium-blur' },
-        h('div', { className: 'details-title' }, '상세 팩트체크 근거'),
-        ...reasonsNodes
-      ),
-      !isPremium ? h('div', { className: 'premium-overlay' },
-        h('div', { className: 'premium-lock-icon' }, '🔒'),
-        h('button', {
-          className: 'premium-btn',
-          onClick: (e: Event) => {
-            e.stopPropagation();
-            // 테스트 단계이므로 누르면 바로 풀리도록 설정
-            renderUI(shadowRoot, true, result, isLoading);
-          }
-        }, 'Premium 잠금 해제 (테스트)')
-      ) : null
-    )
-  );
-
-  // 축소 상태일 때 위젯을 클릭하면 다시 복구
-  if (isWidgetCollapsed) {
-    nocapWidget.addEventListener('click', () => {
-      isWidgetCollapsed = false;
-      renderUI(shadowRoot, isPremium, result, isLoading);
-    });
+    );
+    containerDiv.appendChild(mainPanel);
   }
 
-  shadowRoot.appendChild(nocapWidget);
+  shadowRoot.appendChild(containerDiv);
 }
 
-// 유튜브 SPA 네비게이션 감지 이벤트 리스너
-document.addEventListener('yt-navigate-finish', injectUI);
+// Watchdog: Multi-window and Multi-tab stable
+let lastUrl = window.location.href;
+const watchdog = new MutationObserver(() => {
+  if (lastUrl !== window.location.href) {
+    const oldV = new URL(lastUrl).searchParams.get('v');
+    const newV = new URL(window.location.href).searchParams.get('v');
+    if (oldV !== newV) {
+      lastAnalysisResult = null;
+      currentTextBuffer = "";
+      isAnalyzing = false;
+      const cont = document.getElementById('nocap-extension-root');
+      // Force minimized on new video
+      isWidgetCollapsed = true;
+      if (cont && cont.shadowRoot) renderUI(cont.shadowRoot as any, isPremiumLocal, null, false);
+    }
+    lastUrl = window.location.href;
+  }
 
-// 스크립트 최초 실행
+  if (window.location.pathname === '/watch') {
+    const root = document.getElementById('nocap-extension-root');
+    if (!root) {
+      injectUI();
+    } else if (!document.body.contains(root)) {
+      document.body.appendChild(root);
+    }
+  }
+});
+
+watchdog.observe(document.body, { childList: true, subtree: true });
 injectUI();

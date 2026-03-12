@@ -1,6 +1,5 @@
 export interface AnalysisResult {
     factScore: number;
-    visualScore: number;
     sourceScore: number;
     overallScore: number;
     conclusion: string;
@@ -9,53 +8,40 @@ export interface AnalysisResult {
 
 /**
  * Calculates the overall credibility score based on the mathematical model.
- * @param factScore Factual Integrity Score (0-100)
- * @param visualScore Visual Authenticity Score (0-100)
- * @param sourceScore Source/Channel Transparency Score (0-100)
- * @param localSentimentScore Local AI sentiment penalty (0-100)
- * @returns AnalysisResult
  */
 export function calculateCredibility(
     factScore: number,
-    visualScore: number,
     sourceScore: number,
     localSentimentScore: number
 ): AnalysisResult {
-    // Basic weightings (can be adjusted later)
-    const W_FACT = 0.50;
-    const W_VISUAL = 0.30;
-    const W_SOURCE = 0.20;
+    // Revised weightings (Fact 70%, Source 30% - Visual removed)
+    const W_FACT = 0.70;
+    const W_SOURCE = 0.30;
 
-    let baseScore = (factScore * W_FACT) + (visualScore * W_VISUAL) + (sourceScore * W_SOURCE);
+    let baseScore = (factScore * W_FACT) + (sourceScore * W_SOURCE);
     let reasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> = [];
 
-    // Apply local sentiment penalty (e.g., highly emotional or clickbait language)
+    // Apply local sentiment penalty (if AI detected high emotional intensity)
     if (localSentimentScore > 50) {
-        const penalty = Math.min(20, (localSentimentScore - 50) * 0.5);
+        const penalty = Math.min(15, (localSentimentScore - 50) * 0.3);
         baseScore -= penalty;
-        reasons.push({ type: 'penalty', text: `감정적/선동적 어휘 다수 감지 (-${penalty.toFixed(1)}점)` });
+        reasons.push({ type: 'penalty', text: `AI 감지: 감정적 표현 및 선동성 주의 (-${penalty.toFixed(1)}점)` });
     }
 
     // Apply Source bonus/penalty
     if (sourceScore >= 80) {
-        reasons.push({ type: 'bonus', text: '과거 허위 정보 이력이 없는 신뢰할 수 있는 채널 (+가산점 반영됨)' });
+        reasons.push({ type: 'bonus', text: '신뢰할 수 있는 정보원 패턴 (+가산점)' });
     } else if (sourceScore < 40) {
-        reasons.push({ type: 'penalty', text: '과거 허위 정보 유포 이력이 의심되는 채널 (-감점 반영됨)' });
+        reasons.push({ type: 'penalty', text: '공신력이 낮거나 비과학적인 근거 보임 (-감점)' });
     }
 
-    // Add general fact check reason based on score
+    // Fact score description
     if (factScore > 80) {
-        reasons.push({ type: 'fact', text: '대부분의 주장이 교차 검증된 사실과 일치함' });
+        reasons.push({ type: 'fact', text: 'AI 분석 결과 주장의 논리성과 정합성이 높음' });
     } else if (factScore > 50) {
-        reasons.push({ type: 'fact', text: '일부 주장이 과장되었거나 검증되지 않음' });
+        reasons.push({ type: 'fact', text: '일부 주장이 객관적 사실과 다르거나 논리가 부족함' });
     } else {
-        reasons.push({ type: 'fact', text: '다수의 허위 사실 또는 심각한 논리적 비약 발견' });
-    }
-
-    // VETO LOGIC: If visual authenticity is very low (Deepfake likely)
-    if (visualScore < 30) {
-        baseScore = Math.min(baseScore, 20); // Clamp to max 20%
-        reasons = [{ type: 'penalty', text: '🚨 딥페이크 또는 시각적 조작의 가능성이 매우 높음 (Veto 적용: 최대 20점 제한)' }, ...reasons];
+        reasons.push({ type: 'fact', text: '비과학적, 음모론적 또는 허황된 주장 다수 발생' });
     }
 
     // Ensure score is within 0-100 limits
@@ -63,14 +49,13 @@ export function calculateCredibility(
 
     // Generate conclusion text
     let conclusion = "";
-    if (finalScore >= 80) conclusion = "신뢰도가 높은 영상입니다. 교차 검증 결과 대부분 사실에 부합합니다.";
-    else if (finalScore >= 50) conclusion = "영상의 주장은 일부 사실이나, 주의가 필요한 정보가 섞여 있습니다.";
-    else if (finalScore >= 30) conclusion = "선동적인 내용이나 검증되지 않은 정보가 다수 포함되어 주의가 필요합니다.";
-    else conclusion = "허위 정보 또는 조작된 영상일 확률이 매우 높습니다. 맹신하지 마세요.";
+    if (finalScore >= 80) conclusion = "신뢰도가 매우 높습니다. AI 분석 결과 논리적 일관성이 우수합니다.";
+    else if (finalScore >= 50) conclusion = "정보가 섞여 있습니다. 일부 주장에 대해 비판적 수용이 필요합니다.";
+    else if (finalScore >= 30) conclusion = "신뢰도가 낮습니다. 선동적이거나 비과학적인 주장이 포함되어 있습니다.";
+    else conclusion = "허위 정보 또는 음모론일 가능성이 매우 높으므로 주의하십시오.";
 
     return {
         factScore,
-        visualScore,
         sourceScore,
         overallScore: finalScore,
         conclusion,

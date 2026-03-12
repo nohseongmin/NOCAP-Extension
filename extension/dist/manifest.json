@@ -13,10 +13,10 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-CK9HWK5m.js"
+        "assets/content.ts-C-vCi_sP.js"
       ],
       "matches": [
-        "*://*.youtube.com/watch*"
+        "*://*.youtube.com/*"
       ],
       "run_at": "document_end"
     }
@@ -29,7 +29,7 @@
       "resources": [
         "shadow-ui.js",
         "content.css",
-        "assets/content.ts-CK9HWK5m.js"
+        "assets/content.ts-C-vCi_sP.js"
       ],
       "use_dynamic_url": false
     }
