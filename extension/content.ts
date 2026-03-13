@@ -114,7 +114,7 @@ async function analyzeClaimsWithLocalAI(text: string): Promise<number> {
   const ai = (window as any).ai;
   if (!ai) return 90; // Higher baseline
 
-  const prompt = `주어진 텍스트를 정밀 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요.
+  const prompt = `주어진 텍스트를 3가지 핵심 관점(논리적 일관성, 객관적 사실 부합성, 정보원 중립성)에서 정밀 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요.
   - 가이드라인:
     1. 일상 브이로그, 여행기, 맛집 탐방, 단순 정보 전달: 90~100점.
     2. 과학적 근거가 희박하거나 음모론(지구평평설 등), 사이비 교주(허경영 등) 찬양, 사회적 선동: 0~30점.
@@ -191,6 +191,13 @@ function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisRe
         isWidgetCollapsed = false;
         renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
         if (!lastAnalysisResult && !isAnalyzing) runAnalysis(shadowRoot);
+      } else {
+        // Reset state on collapse to prevent carry-over (especially for Shorts/fast navigation)
+        isWidgetCollapsed = true;
+        lastAnalysisResult = null;
+        currentTextBuffer = "";
+        isAnalyzing = false;
+        renderUI(shadowRoot, isPremium, null, false);
       }
     }
   });
@@ -207,7 +214,11 @@ function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisRe
             onClick: (e: Event) => {
               e.stopPropagation();
               isWidgetCollapsed = true;
-              renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
+              // Also reset on close button
+              lastAnalysisResult = null;
+              currentTextBuffer = "";
+              isAnalyzing = false;
+              renderUI(shadowRoot, isPremium, null, false);
             }
           }, '×'),
           h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
@@ -254,13 +265,14 @@ const watchdog = new MutationObserver(() => {
   if (lastUrl !== window.location.href) {
     const oldV = new URL(lastUrl).searchParams.get('v');
     const newV = new URL(window.location.href).searchParams.get('v');
-    if (oldV !== newV) {
+    // Stronger reset: if either video ID changed OR it's a Shorts navigation
+    if (oldV !== newV || window.location.pathname.includes('/shorts/')) {
+      console.log('NOCAP: Navigation detected, resetting state.');
       lastAnalysisResult = null;
       currentTextBuffer = "";
       isAnalyzing = false;
+      isWidgetCollapsed = true; // Always collapse on new video
       const cont = document.getElementById('nocap-extension-root');
-      // Force minimized on new video
-      isWidgetCollapsed = true;
       if (cont && cont.shadowRoot) renderUI(cont.shadowRoot as any, isPremiumLocal, null, false);
     }
     lastUrl = window.location.href;
