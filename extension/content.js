@@ -68,23 +68,27 @@ async function runAnalysis(shadowRoot) {
     isAnalyzing = true;
     renderUI(shadowRoot, isPremiumLocal, null, true);
     await new Promise(r => setTimeout(r, 800)); // Wait for captions
+    const videoTitle = document.querySelector('h1.ytd-video-primary-info-renderer')?.innerText ||
+        document.querySelector('yt-formatted-string.ytd-video-primary-info-renderer')?.innerText ||
+        document.title.replace(' - YouTube', '');
+    const channelName = document.querySelector('#channel-name a')?.innerText ||
+        document.querySelector('ytd-channel-name yt-formatted-string')?.innerText || "Unknown Channel";
     let textToAnalyze = currentTextBuffer.trim();
     if (!textToAnalyze) {
-        const videoTitle = document.title || "Unknown Video";
-        textToAnalyze = `[자막 없음] 영상 제목: ${videoTitle}`;
+        textToAnalyze = `[자막 없음] 영상 제목: ${videoTitle} / 채널: ${channelName}`;
     }
-    console.log('[NOCAP] Analyzing text:', textToAnalyze);
+    else {
+        textToAnalyze = `채널: ${channelName} / 제목: ${videoTitle}\n\n내용: ${textToAnalyze}`;
+    }
+    console.log('[NOCAP] Analyzing with context:', { channelName, videoTitle, textLength: textToAnalyze.length });
     try {
         const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
         const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
-        // Aggregation: Context-Aware Veto System
-        // Re-evaluate: If AI grants a high score AND heuristics detects some conspiracies, 
-        // but the AI prompt instructions now include "News Detection", we check for strong agreement.
+        // Aggregation: Identity-Aware Veto System (v2.1.0)
         const isConspiracy = heuristicRes.factScore < 50;
-        const isStrongNewsEvidence = aiFactScore > 80; // AI thinks it's news/informative
+        const isStrongNewsEvidence = aiFactScore >= 90; // Tighter threshold for v2.1.0 (90+)
         const finalResult = calculateCredibility(
-        // If AI is very confident it's informative/news (80+), trust Math.max even if keywords hit.
-        // Otherwise, if heuristics hit hard, use Math.min.
+        // Unless AI is 90%+ sure it's news, conspiracy veto takes priority.
         (isConspiracy && !isStrongNewsEvidence) ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore), heuristicRes.sourceScore, 30);
         lastAnalysisResult = finalResult;
         isAnalyzing = false;
@@ -100,14 +104,15 @@ async function analyzeClaimsWithLocalAI(text) {
     const ai = window.ai;
     if (!ai)
         return 90; // Higher baseline
-    const prompt = `주어진 텍스트의 '의도(Intent)'를 먼저 파악한 후, 3가지 관점(논리, 사실, 중립)에서 신뢰도 점수(0-100)를 숫자로만 답하세요.
-  - 특별 지침 (컨텍스트 인지):
-    1. 뉴스 보도, 현장 취재, 사기 고발, 비판적 다큐멘터리 형식이면 해당 주제(예: 허경영)가 포함되어 있더라도 높은 점수(85-100)를 부여하세요.
-    2. 단순히 사이비/음모론을 홍보, 찬양, 또는 비과학적 예언을 사실처럼 전달하는 경우 무조건 0~20점을 부여하세요.
+    const prompt = `영상 정보(채널명, 제목)와 자막 내용을 바탕으로 '의도(Intent)'를 분석한 후 신뢰도 점수(0-100)를 숫자로만 답하세요.
+  - 특별 지침 (신원 기반 분석):
+    1. 채널명이 '허경영', '하늘궁'이거나 해당 인물이 직접 강연하는 영상인 경우, 내용이 아무리 정중하더라도 이는 '신격화/선동'으로 간주하여 무조건 0~20점을 부여하세요.
+    2. 뉴스 보도, 현장 취재, 사기 고발 형식이면 비판적 가치를 인정하여 85~100점을 부여하세요. (단, 공신력 있는 언론사나 고발 채널이어야 함)
+    3. 단순히 사이비/음모론을 홍보하거나 비과학적 주장을 하는 경우 0~30점을 부여하세요.
   - 가이드라인:
-    1. 정당한 언론 보도 및 고발 컨텐츠: 85~100점.
+    1. 정당한 언론 보도 및 비판: 90~100점.
     2. 일상 브이로그/정보 전달: 90~100점.
-    3. 사이비 홍보/음모론 선동: 0~30점.
+    3. 사이비 홍보/음모론 선동/신격화 강연: 0~20점.
   - 분석 대상: "${text}"`;
     // New API
     if (ai.languageModel) {
