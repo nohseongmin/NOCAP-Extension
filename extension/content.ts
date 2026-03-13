@@ -93,11 +93,16 @@ async function runAnalysis(shadowRoot: ShadowRoot) {
     const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
     const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
     
-    // Aggregation: Veto System
-    // If heuristics detect major red flags (penalty), use Math.min to prevent AI "politeness"
-    const isConspiracy = heuristicRes.factScore < 50; 
+    // Aggregation: Context-Aware Veto System
+    // Re-evaluate: If AI grants a high score AND heuristics detects some conspiracies, 
+    // but the AI prompt instructions now include "News Detection", we check for strong agreement.
+    const isConspiracy = heuristicRes.factScore < 50;
+    const isStrongNewsEvidence = aiFactScore > 80; // AI thinks it's news/informative
+
     const finalResult = calculateCredibility(
-      isConspiracy ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore),
+      // If AI is very confident it's informative/news (80+), trust Math.max even if keywords hit.
+      // Otherwise, if heuristics hit hard, use Math.min.
+      (isConspiracy && !isStrongNewsEvidence) ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore),
       heuristicRes.sourceScore,
       30
     );
@@ -116,13 +121,14 @@ async function analyzeClaimsWithLocalAI(text: string): Promise<number> {
   const ai = (window as any).ai;
   if (!ai) return 90; // Higher baseline
 
-  const prompt = `주어진 텍스트를 3가지 핵심 관점(논리적 일관성, 객관적 사실 부합성, 정보원 중립성)에서 정밀 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요.
-  - 특별 지침 (매우 중요):
-    1. 예언적 주장, 비과학적 미래 예측, 특정 인물 신격화(예: 허경영, 구원자 주장), 증명 불가능한 초능력 등은 주장의 논리 정합성에 상관없이 무조건 0~20점을 부여하세요.
+  const prompt = `주어진 텍스트의 '의도(Intent)'를 먼저 파악한 후, 3가지 관점(논리, 사실, 중립)에서 신뢰도 점수(0-100)를 숫자로만 답하세요.
+  - 특별 지침 (컨텍스트 인지):
+    1. 뉴스 보도, 현장 취재, 사기 고발, 비판적 다큐멘터리 형식이면 해당 주제(예: 허경영)가 포함되어 있더라도 높은 점수(85-100)를 부여하세요.
+    2. 단순히 사이비/음모론을 홍보, 찬양, 또는 비과학적 예언을 사실처럼 전달하는 경우 무조건 0~20점을 부여하세요.
   - 가이드라인:
-    1. 일상 브이로그, 여행기, 맛집 탐방, 단순 정보 전달: 90~100점.
-    2. 근거 없는 음모론(지구평평설 등), 사이비 찬양, 사회적 선동: 0~30점.
-    3. 중립적이거나 출처가 불분명한 단순 주장: 60~70점.
+    1. 정당한 언론 보도 및 고발 컨텐츠: 85~100점.
+    2. 일상 브이로그/정보 전달: 90~100점.
+    3. 사이비 홍보/음모론 선동: 0~30점.
   - 분석 대상: "${text}"`;
 
   // New API

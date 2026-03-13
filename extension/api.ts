@@ -41,6 +41,19 @@ export async function mockAnalyzeCloud(request: FactCheckRequest): Promise<FactC
         }
     });
 
+    // 3. Journalism/News Context (Whitelist)
+    const newsKeywords = [/속보/i, /뉴스/i, /보도/i, /고발/i, /기자/i, /취재/i, /앵커/i, /평론/i];
+    let newsScore = 0;
+    newsKeywords.forEach(pattern => {
+        if (pattern.test(text)) newsScore += 1;
+    });
+
+    // If strong journalistic indicators, drastically reduce the conspiracy penalty
+    if (newsScore >= 2) {
+        console.log(`[Heuristic] Journalistic context detected (score: ${newsScore}). Reducing penalty.`);
+        penalty = Math.max(0, penalty - 40);
+    }
+
     return {
         factScore: Math.max(10, 85 - penalty),
         sourceScore: Math.max(10, 80 - penalty)
