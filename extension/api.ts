@@ -37,7 +37,7 @@ export async function mockAnalyzeCloud(request: FactCheckRequest): Promise<FactC
     conspiracyPatterns.forEach(pattern => {
         if (pattern.test(text)) {
             console.log(`[Heuristic] Flagged by pattern: ${pattern}`);
-            penalty += 30;
+            penalty += 55; // Significantly higher penalty to bypass AI optimism
         }
     });
 

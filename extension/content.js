@@ -77,9 +77,10 @@ async function runAnalysis(shadowRoot) {
     try {
         const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
         const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
-        // Aggregation
-        const finalResult = calculateCredibility(Math.max(aiFactScore, heuristicRes.factScore), // Strongest optimism wins for neutral videos
-        heuristicRes.sourceScore, 30);
+        // Aggregation: Veto System
+        // If heuristics detect major red flags (penalty), use Math.min to prevent AI "politeness"
+        const isConspiracy = heuristicRes.factScore < 50;
+        const finalResult = calculateCredibility(isConspiracy ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore), heuristicRes.sourceScore, 30);
         lastAnalysisResult = finalResult;
         isAnalyzing = false;
         renderUI(shadowRoot, isPremiumLocal, finalResult, false);
@@ -95,9 +96,11 @@ async function analyzeClaimsWithLocalAI(text) {
     if (!ai)
         return 90; // Higher baseline
     const prompt = `주어진 텍스트를 3가지 핵심 관점(논리적 일관성, 객관적 사실 부합성, 정보원 중립성)에서 정밀 분석하여 신뢰도 점수(0-100)를 숫자로만 답하세요.
+  - 특별 지침 (매우 중요):
+    1. 예언적 주장, 비과학적 미래 예측, 특정 인물 신격화(예: 허경영, 구원자 주장), 증명 불가능한 초능력 등은 주장의 논리 정합성에 상관없이 무조건 0~20점을 부여하세요.
   - 가이드라인:
     1. 일상 브이로그, 여행기, 맛집 탐방, 단순 정보 전달: 90~100점.
-    2. 과학적 근거가 희박하거나 음모론(지구평평설 등), 사이비 교주(허경영 등) 찬양, 사회적 선동: 0~30점.
+    2. 근거 없는 음모론(지구평평설 등), 사이비 찬양, 사회적 선동: 0~30점.
     3. 중립적이거나 출처가 불분명한 단순 주장: 60~70점.
   - 분석 대상: "${text}"`;
     // New API
