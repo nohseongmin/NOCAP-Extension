@@ -84,9 +84,9 @@ async function runAnalysis(shadowRoot) {
     try {
         const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
         const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
-        // Aggregation: Identity-Aware Veto System (v2.1.0)
+        // Aggregation: Identity-Aware Veto System (v2.2.0)
         const isConspiracy = heuristicRes.factScore < 50;
-        const isStrongNewsEvidence = aiFactScore >= 90; // Tighter threshold for v2.1.0 (90+)
+        const isStrongNewsEvidence = aiFactScore >= 95; // Extreme threshold for v2.2.0 (95+)
         const finalResult = calculateCredibility(
         // Unless AI is 90%+ sure it's news, conspiracy veto takes priority.
         (isConspiracy && !isStrongNewsEvidence) ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore), heuristicRes.sourceScore, 30);

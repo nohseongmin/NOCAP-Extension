@@ -13,7 +13,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-CdLV4f8I.js"
+        "assets/content.ts-B3a9gCG0.js"
       ],
       "matches": [
         "*://*.youtube.com/*"
@@ -29,7 +29,7 @@
       "resources": [
         "shadow-ui.js",
         "content.css",
-        "assets/content.ts-CdLV4f8I.js"
+        "assets/content.ts-B3a9gCG0.js"
       ],
       "use_dynamic_url": false
     }

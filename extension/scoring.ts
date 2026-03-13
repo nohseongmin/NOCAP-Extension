@@ -21,11 +21,10 @@ export function calculateCredibility(
     let baseScore = (factScore * W_FACT) + (sourceScore * W_SOURCE);
     let reasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> = [];
 
-    // Apply local sentiment penalty (if AI detected high emotional intensity)
-    if (localSentimentScore > 50) {
-        const penalty = Math.min(15, (localSentimentScore - 50) * 0.3);
-        baseScore -= penalty;
-        reasons.push({ type: 'penalty', text: `AI 감지: 감정적 표현 및 선동성 주의 (-${penalty.toFixed(1)}점)` });
+    // Critical Failure: If scientific/source credibility is low, apply a heavy penalty multiplier
+    if (sourceScore < 40) {
+        baseScore *= 0.6;
+        reasons.push({ type: 'penalty', text: '과학적/공신력 부족으로 인해 신뢰 가중치가 하락함 (-대폭 감점)' });
     }
 
     // Apply Source bonus/penalty
