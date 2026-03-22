@@ -18,3 +18,6 @@ Thumbs.db
 *.js
 *.js.map
 out-tsc/
+
+# Agent
+.agent/
