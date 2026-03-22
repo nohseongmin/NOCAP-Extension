@@ -12,14 +12,15 @@ export interface AnalysisResult {
 export function calculateCredibility(
     factScore: number,
     sourceScore: number,
-    localSentimentScore: number
+    localSentimentScore: number,
+    externalReasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> = []
 ): AnalysisResult {
     // Revised weightings (Fact 70%, Source 30% - Visual removed)
     const W_FACT = 0.70;
     const W_SOURCE = 0.30;
 
     let baseScore = (factScore * W_FACT) + (sourceScore * W_SOURCE);
-    let reasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> = [];
+    let reasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> = [...externalReasons];
 
     // Critical Failure: If scientific/source credibility is low, apply a heavy penalty multiplier
     if (sourceScore < 40) {

@@ -1,6 +1,6 @@
 // content.js - 유튜브 화면에 UI를 주입하는 역할
 import { AnalysisResult, calculateCredibility } from './scoring';
-import { mockAnalyzeCloud } from './api';
+import { mockAnalyzeCloud, runGatekeeper } from './api';
 
 console.log('NOCAP: Content script loaded (v1.6.0).');
 
@@ -88,27 +88,82 @@ async function runAnalysis(shadowRoot: ShadowRoot) {
                       (document.querySelector('ytd-channel-name yt-formatted-string') as HTMLElement)?.innerText || "Unknown Channel";
 
   let textToAnalyze = currentTextBuffer.trim();
-  if (!textToAnalyze) {
-    textToAnalyze = `[자막 없음] 영상 제목: ${videoTitle} / 채널: ${channelName}`;
-  } else {
-    textToAnalyze = `채널: ${channelName} / 제목: ${videoTitle}\n\n내용: ${textToAnalyze}`;
+  
+  // 1. Gatekeeper Early Exit
+  const gate = runGatekeeper(textToAnalyze + " " + videoTitle);
+  if (gate.skipAI) {
+      console.log('[NOCAP] Gatekeeper: Clean content detected. Skipping intensive AI.');
+      // Give a highly credible score directly without touching Gemini Nano
+      const finalResult = calculateCredibility(gate.baseScore, 85, 30, gate.reasons || []);
+      lastAnalysisResult = finalResult;
+      isAnalyzing = false;
+      renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+      return;
   }
 
-  console.log('[NOCAP] Analyzing with context:', { channelName, videoTitle, textLength: textToAnalyze.length });
+  // 2. Fetch Wikipedia context (Local RAG)
+  // Use the first word or two of the video title as a generic search query
+  const searchKeyword = videoTitle.split(' ').slice(0, 2).join(' ').replace(/[^a-zA-Z0-9가-힣\s]/g, "");
+  const wikiContext = await new Promise<string | null>(resolve => {
+     try {
+         chrome.runtime.sendMessage({ action: 'FETCH_WIKI', query: searchKeyword }, (response) => {
+             resolve(response?.result || null);
+         });
+     } catch (e) { resolve(null); }
+  });
+
+  // 3. Summarize using built-in AI (Sliding Window compression)
+  let summarizedText = textToAnalyze;
+  const ai = (window as any).ai;
+  if (ai?.summarizer && textToAnalyze.length > 200) {
+      try {
+          const caps = await ai.summarizer.capabilities();
+          if (caps.available !== 'no') {
+              const summarizer = await ai.summarizer.create();
+              summarizedText = await summarizer.summarize(textToAnalyze);
+              summarizer.destroy();
+              console.log('[NOCAP] Text summarized down to:', summarizedText.length, 'chars');
+          }
+      } catch (e) {
+          console.warn("[NOCAP] Summarizer failed, falling back to raw text", e);
+      }
+  }
+
+  // Prepare final prompt context
+  if (!summarizedText) {
+    textToAnalyze = `[자막 없음] 영상 제목: ${videoTitle} / 채널: ${channelName}`;
+  } else {
+    textToAnalyze = `채널: ${channelName} / 제목: ${videoTitle}\n\n내용요약: ${summarizedText}`;
+  }
+  
+  if (wikiContext) {
+      textToAnalyze += `\n\n[팩트체크 참고용 위키백과 데이터]: ${wikiContext}`;
+  }
+
+  console.log('[NOCAP] Analyzing with enriched context:', { channelName, videoTitle, wikiFound: !!wikiContext, textLength: textToAnalyze.length });
 
   try {
     const aiFactScore = await analyzeClaimsWithLocalAI(textToAnalyze);
     const heuristicRes = await mockAnalyzeCloud({ textContext: textToAnalyze });
     
+    // Apply Gatekeeper's heavy penalty to heuristics if a dangerous keyword was found
+    if (gate.baseScore === 0) {
+        heuristicRes.factScore = Math.min(heuristicRes.factScore, 20);
+        heuristicRes.sourceScore = Math.min(heuristicRes.sourceScore, 20);
+    }
+
     // Aggregation: Identity-Aware Veto System (v2.2.0)
     const isConspiracy = heuristicRes.factScore < 50;
     const isStrongNewsEvidence = aiFactScore >= 95; // Extreme threshold for v2.2.0 (95+)
+
+    const combinedExternalReasons = [...(gate.reasons || []), ...(heuristicRes.reasons || [])];
 
     const finalResult = calculateCredibility(
       // Unless AI is 90%+ sure it's news, conspiracy veto takes priority.
       (isConspiracy && !isStrongNewsEvidence) ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore),
       heuristicRes.sourceScore,
-      30
+      30,
+      combinedExternalReasons
     );
     
     lastAnalysisResult = finalResult;
