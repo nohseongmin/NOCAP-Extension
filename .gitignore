@@ -15,8 +15,6 @@ python-embed/
 Thumbs.db
 
 # Build
-*.js
-*.js.map
 out-tsc/
 
 # Agent
