@@ -9,7 +9,7 @@ let isWidgetCollapsed = true;
 let isAnalyzing = false;
 let lastAnalysisResult: AnalysisResult | null = null;
 let currentTextBuffer: string = "";
-let isPremiumLocal = false; // BASIC by default
+let isPremiumLocal = true; // ALL FEATURES FREE NOW
 
 function injectUI() {
   const isWatchPage = window.location.pathname === '/watch';
@@ -295,27 +295,18 @@ function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisRe
         ),
         h('button', { 
             className: 'toggle-btn',
-            onClick: (e: Event) => {
-               e.stopPropagation();
-               isPremiumLocal = !isPremiumLocal;
-               renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
-            }
-        }, isPremium ? 'PRO' : 'BASIC')
+            onClick: (e: Event) => e.stopPropagation()
+        }, 'FREE')
       ),
       h('div', { className: 'score-container' },
         h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`),
         h('div', { className: 'conclusion' }, isLoading ? "판독 중..." : (result?.conclusion || "분석 버튼을 눌러주세요."))
       ),
       h('div', { className: 'details-section' },
-        h('div', { className: isPremium ? '' : 'premium-blur' },
+        h('div', { className: '' },
           h('div', { className: 'details-title' }, '판독 근거'),
           ...(result?.reasons || []).map(r => h('div', { className: 'reason-item' }, h('span', {}, '📍'), r.text))
-        ),
-        // Restore Premium Overlay with Text
-        !isPremium ? h('div', { className: 'premium-overlay' },
-          h('div', { className: 'premium-lock-icon' }, '🔒'),
-          h('span', { className: 'premium-text' }, '프리미엄 요금제')
-        ) : null
+        )
       ),
       h('div', { className: 'disclaimer-section' },
         h('div', { className: 'disclaimer-text' }, 
