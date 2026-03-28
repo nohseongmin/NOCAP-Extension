@@ -4,93 +4,86 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NOCAP | 유튜브 가짜뉴스 온디바이스 판독기</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
   </head>
   <body>
-    <!-- Background Glows -->
-    <div class="bg-glow pink-glow"></div>
-    <div class="bg-glow blue-glow"></div>
-    
     <div class="container">
       
-      <!-- HERO SECTION -->
+      <!-- HERO AREA -->
       <main class="hero-section">
-        <div class="logo-icon">🧢🚫</div>
+        <div class="logo-container">
+          <img src="https://raw.githubusercontent.com/nohseongmin/NOCAP-Extension/main/extension/images/icon128.png" alt="NOCAP Logo" class="main-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzRFODlFMCIvPjxwb2x5Z29uIHBvaW50cz0iMjAsNjAgNDAsNDAgODAsNjAiIGZpbGw9IiM2MEE1RkEiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTMzNDJGIiBzdHJva2Utd2lkdGg9IjEyIi8+PGxpbmUgeDE9IjIyIiB5MT0iMjIiIHgyPSI3OCIgeTI9Ijc4IiBzdHJva2U9IiNFMzM0MkYiIHN0cm9rZS13aWR0aD0iMTIiLz48L3N2Zz4='"/>
+        </div>
         <h1 class="main-title">NOCAP</h1>
         <p class="subtitle">당신의 브라우징 경험을 향상시키세요</p>
       </main>
 
-      <!-- INTRODUCTION -->
-      <section class="card-section">
-        <h2 class="section-title">소개</h2>
-        <p class="section-desc">
-          NOCAP은 유튜브 동영상 속 정보의 신뢰성을 실시간으로 분석해주는 혁신적인 온디바이스 AI 도구입니다. 
-          서버 데이터 전송 없이, 오직 귀하의 브라우저 내에서 안전하게 구동됩니다.
+      <!-- CARD 1: 소개 -->
+      <section class="info-card">
+        <h2 class="card-title">소개</h2>
+        <p class="card-text">
+          NOCAP은 유튜브 동영상 속 정보의 신뢰성을 실시간으로 분석해주는 혁신적인 온디바이스 AI 도구입니다. 서버 데이터 전송 없이, 오직 귀하의 브라우저 내에서 안전하게 구동됩니다.
+        </p>
+        <p class="card-text">
+          Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </p>
+        <p class="card-text">
+          Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
         </p>
       </section>
       
-      <!-- KEY FEATURES -->
-      <section class="card-section">
-        <h2 class="section-title">주요 기능</h2>
-        <div class="features-grid">
-          <div class="feature-item">
-            <div class="bullet"></div>
-            <div class="feature-text">
-              <h3>간편한 사용</h3>
-              <p>버튼 한 번 클릭으로 누구나 쉽게 판독 결과를 직관적으로 이해할 수 있습니다.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="bullet"></div>
-            <div class="feature-text">
-              <h3>빠른 성능 (Zero Cost)</h3>
-              <p>크롬 내장 AI 모터를 활용하여 무거운 서버 통신 없이 쾌적하게 작동합니다.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="bullet"></div>
-            <div class="feature-text">
-              <h3>보안 최우선 (Privacy First)</h3>
-              <p>모든 데이터는 기기 내부에서만 처리되며, 절대로 외부 서버로 전송되지 않습니다.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="bullet"></div>
-            <div class="feature-text">
-              <h3>완전 무료 사용</h3>
-              <p>과금 체제를 없애고 모든 프리미엄 기능을 완전 무료로 영구 개방합니다.</p>
-            </div>
-          </div>
+      <!-- CARD 2: 주요 기능 -->
+      <section class="info-card">
+        <h2 class="card-title">주요 기능</h2>
+        
+        <div class="feature-block">
+          <h3>간편한 사용</h3>
+          <p>버튼 한 번 클릭으로 누구나 쉽게 판독 결과를 직관적으로 이해할 수 있습니다.</p>
+        </div>
+
+        <div class="feature-block">
+          <h3>빠른 성능 (Zero Cost)</h3>
+          <p>크롬 내장 AI 모터를 활용하여 무거운 서버 통신 없이 쾌적하게 작동합니다.</p>
+        </div>
+
+        <div class="feature-block">
+          <h3>보안 최우선 (Privacy First)</h3>
+          <p>모든 데이터는 기기 내부에서만 처리되며, 절대로 외부 서버로 전송되지 않습니다.</p>
+        </div>
+
+        <div class="feature-block">
+          <h3>완전 무료 사용</h3>
+          <p>과금 체제를 없애고 모든 프리미엄 기능을 완전 무료로 영구 개방합니다.</p>
         </div>
       </section>
 
-      <!-- ACTION BUTTONS -->
-      <div class="button-row">
-        <a href="https://chrome.google.com/webstore" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-          확장 프로그램 추가하기
-          <svg fill="none" class="icon" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-        </a>
-        <a href="https://www.buymeacoffee.com" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-          개발자에게 커피 한잔 사주기
-          <svg fill="none" class="icon" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"></path></svg>
-        </a>
-      </div>
+      <!-- CARD 3: 버튼 및 행동 유도 -->
+      <section class="info-card center-card">
+        <div class="button-row">
+          <a href="https://chrome.google.com/webstore" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+            확장 프로그램 추가하기
+          </a>
+          <a href="https://www.buymeacoffee.com" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            개발자에게 커피 한잔 사주기
+          </a>
+        </div>
+      </section>
 
-      <!-- DISCLAIMER FOOTER -->
-      <footer class="disclaimer-card">
-        <h3 class="disclaimer-header">⚠️ 본 확장 프로그램의 결과는 AI 알고리즘에 의해 생성된 참고용 데이터로, 실제 사실과 다를 수 있습니다.</h3>
+      <!-- CARD 4: 면책공고 -->
+      <section class="info-card">
+        <h2 class="card-title">⚠️ 면책공고</h2>
+        <p class="card-text"><strong>본 확장 프로그램의 결과는 AI 알고리즘에 의해 생성된 참고용 데이터로, 실제 사실과 다를 수 있습니다.</strong></p>
         <ul class="disclaimer-list">
-          <li><strong>1. 정확성 및 신뢰성:</strong> 모든 판독 결과는 AI 알고리즘에 의해 자동 생성되며, 100%의 정확성을 보증하지 않습니다.</li>
-          <li><strong>2. 법적 책임:</strong> 본 서비스의 사용으로 인한 직접적/간접적 손해나 분쟁에 대해 개발자는 어떠한 법적 책임도 지지 않습니다.</li>
-          <li><strong>3. 사용 제한:</strong> 제공되는 결과는 단순 보조 지표 및 판단을 위한 참고용으로만 활용하십시오.</li>
-          <li><strong>4. 개인정보 보호:</strong> 시스템은 오직 영상의 텍스트 자막만을 분석합니다. 민감한 정보 입력은 자제해 주시기 바랍니다.</li>
-          <li><strong>5. 서비스 변경 및 중단:</strong> 사전 통지 없이 서비스 내용이 업데이트되거나 일시 중단될 수 있습니다.</li>
-          <li><strong>6. 제3자 콘텐츠:</strong> 분석의 대상이 되는 유튜브 영상의 저작권 및 내용 책임은 원저작자에게 있습니다.</li>
+          <li><strong>1. 정확성 및 신뢰성:</strong> 모든 판독 결과는 자동 생성되며, 100% 보증하지 않습니다.</li>
+          <li><strong>2. 법적 책임:</strong> 본 서비스의 사용으로 인한 직접적/간접적 손해에 어떠한 법적 책임도 지지 않습니다.</li>
+          <li><strong>3. 사용 제한:</strong> 단순 보조 지표 및 판단을 위한 참고용으로만 활용하십시오.</li>
+          <li><strong>4. 개인정보 보호:</strong> 시스템은 보호되나 민감한 정보 입력은 자제해 주시기 바랍니다.</li>
+          <li><strong>5. 서비스 변경 및 중단:</strong> 사전 통지 없이 서비스 내용이 변경될 수 있습니다.</li>
+          <li><strong>6. 제3자 콘텐츠:</strong> 분석 대상 유튜브 영상의 저작권 및 책임은 원저작자에게 있습니다.</li>
         </ul>
-      </footer>
+      </section>
       
     </div>
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
