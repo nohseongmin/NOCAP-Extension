@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOCAP | 유튜브 가짜뉴스 온디바이스 판독기</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Animated background -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    
+    <div class="container">
+      <header class="glass-header">
+        <div class="logo">NOCAP <span>Engine</span></div>
+      </header>
+      
+      <main class="hero-section glass-panel">
+        <div class="hero-content">
+          <div class="badge">100% On-Device AI Fact Checker</div>
+          <h1 class="main-title">유튜브 속 가짜뉴스,<br>이제 <span class="highlight">비용 없이</span> 걸러내세요.</h1>
+          <p class="subtitle">
+            서버 전송 없이, 당신의 리소스 소모 없이. <br>
+            크롬 내장 AI와 로컬 휴리스틱 엔진을 활용해 당신의 프라이버시를 지키는 압도적 팩트체크를 경험하세요.
+          </p>
+          
+          <div class="action-buttons">
+            <a href="https://chrome.google.com/webstore" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              Chrome에 추가하기 (무료)
+            </a>
+            <a href="https://www.buymeacoffee.com" class="btn btn-donation" target="_blank" rel="noopener noreferrer">
+              ☕ 개발자에게 커피 한 잔 사주기
+            </a>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🚀</div>
+            <h3>제로 코스트 & 배터리 절약</h3>
+            <p>서버 API 없이 작동하며, 뮤직비디오 등은 AI 분석을 스킵해 노트북 배터리를 보호합니다.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>사이비/음모론 Veto 시스템</h3>
+            <p>교묘한 가짜뉴스 채널을 1차적으로 강제 필터링하여 AI 환각을 완벽에 가깝게 차단합니다.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🧠</div>
+            <h3>데이터 프라이버시</h3>
+            <p>당신의 시청 기록과 자막은 100% 브라우저 안에서만 처리되고 즉시 폐기됩니다.</p>
+          </div>
+        </div>
+      </main>
+      
+      <footer class="glass-footer">
+        <p>© 2026 NOCAP Project. Built with Chrome Built-in AI.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
