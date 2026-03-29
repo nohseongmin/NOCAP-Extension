@@ -39,7 +39,17 @@ function injectUI() {
   container.style.pointerEvents = 'auto';
 
   const shadowRoot = container.attachShadow({ mode: 'open' }); // Changed to open for better debugging/stability
-  renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
+  
+  const linkEl = document.createElement('link');
+  linkEl.rel = 'stylesheet';
+  linkEl.href = chrome.runtime.getURL('content.css');
+  shadowRoot.appendChild(linkEl);
+
+  const uiRoot = document.createElement('div');
+  uiRoot.id = 'nocap-ui-root';
+  shadowRoot.appendChild(uiRoot);
+
+  renderUI(uiRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
   document.body.appendChild(container);
 
   startCaptionScraper();
@@ -73,11 +83,11 @@ function startCaptionScraper() {
   }
 }
 
-async function runAnalysis(shadowRoot: ShadowRoot) {
+async function runAnalysis(containerNode: HTMLElement) {
   if (isAnalyzing) return;
   
   isAnalyzing = true;
-  renderUI(shadowRoot, isPremiumLocal, null, true);
+  renderUI(containerNode, isPremiumLocal, null, true);
 
   await new Promise(r => setTimeout(r, 800)); // Wait for captions
 
@@ -97,7 +107,7 @@ async function runAnalysis(shadowRoot: ShadowRoot) {
       const finalResult = calculateCredibility(gate.baseScore, 85, 30, gate.reasons || []);
       lastAnalysisResult = finalResult;
       isAnalyzing = false;
-      renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+      renderUI(containerNode, isPremiumLocal, finalResult, false);
       return;
   }
 
@@ -168,11 +178,11 @@ async function runAnalysis(shadowRoot: ShadowRoot) {
     
     lastAnalysisResult = finalResult;
     isAnalyzing = false;
-    renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+    renderUI(containerNode, isPremiumLocal, finalResult, false);
   } catch (e) {
     console.error('[NOCAP] Analysis error:', e);
     isAnalyzing = false;
-    renderUI(shadowRoot, isPremiumLocal, null, false);
+    renderUI(containerNode, isPremiumLocal, null, false);
   }
 }
 
@@ -242,32 +252,22 @@ function h(tag: string, props: any, ...children: any[]) {
   return el;
 }
 
-function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisResult | null, isLoading: boolean) {
+function renderUI(containerNode: HTMLElement, isPremium: boolean, result: AnalysisResult | null, isLoading: boolean) {
   let score = result?.overallScore || 0;
   let color = score >= 80 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
   if (!result && !isLoading) color = '#a1a1aa';
 
-  while (shadowRoot.firstChild) {
-    shadowRoot.removeChild(shadowRoot.firstChild);
+  while (containerNode.firstChild) {
+    containerNode.removeChild(containerNode.firstChild);
   }
-
-  const linkEl = h('link', { rel: 'stylesheet', href: chrome.runtime.getURL('content.css') });
-  shadowRoot.appendChild(linkEl);
 
   const containerDiv = h('div', {
     className: isWidgetCollapsed ? 'nocap-widget collapsed' : 'nocap-widget',
     onClick: () => {
       if (isWidgetCollapsed) {
         isWidgetCollapsed = false;
-        renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
-        if (!lastAnalysisResult && !isAnalyzing) runAnalysis(shadowRoot);
-      } else {
-        // Reset state on collapse to prevent carry-over (especially for Shorts/fast navigation)
-        isWidgetCollapsed = true;
-        lastAnalysisResult = null;
-        currentTextBuffer = "";
-        isAnalyzing = false;
-        renderUI(shadowRoot, isPremium, null, false);
+        renderUI(containerNode, isPremium, lastAnalysisResult, isAnalyzing);
+        if (!lastAnalysisResult && !isAnalyzing) runAnalysis(containerNode);
       }
     }
   });
@@ -288,7 +288,7 @@ function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisRe
               lastAnalysisResult = null;
               currentTextBuffer = "";
               isAnalyzing = false;
-              renderUI(shadowRoot, isPremium, null, false);
+              renderUI(containerNode, isPremium, null, false);
             }
           }, '×'),
           h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
@@ -317,7 +317,7 @@ function renderUI(shadowRoot: ShadowRoot, isPremium: boolean, result: AnalysisRe
     containerDiv.appendChild(mainPanel);
   }
 
-  shadowRoot.appendChild(containerDiv);
+  containerNode.appendChild(containerDiv);
 }
 
 // Watchdog: Multi-window and Multi-tab stable
@@ -334,7 +334,10 @@ const watchdog = new MutationObserver(() => {
       isAnalyzing = false;
       isWidgetCollapsed = true; // Always collapse on new video
       const cont = document.getElementById('nocap-extension-root');
-      if (cont && cont.shadowRoot) renderUI(cont.shadowRoot as any, isPremiumLocal, null, false);
+      if (cont && cont.shadowRoot) {
+        const uiRoot = cont.shadowRoot.getElementById('nocap-ui-root');
+        if (uiRoot) renderUI(uiRoot as HTMLElement, isPremiumLocal, null, false);
+      }
     }
     lastUrl = window.location.href;
   }

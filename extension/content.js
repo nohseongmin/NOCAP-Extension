@@ -7,7 +7,7 @@ let isWidgetCollapsed = true;
 let isAnalyzing = false;
 let lastAnalysisResult = null;
 let currentTextBuffer = "";
-let isPremiumLocal = false; // BASIC by default
+let isPremiumLocal = true; // ALL FEATURES FREE NOW
 function injectUI() {
     const isWatchPage = window.location.pathname === '/watch';
     let container = document.getElementById('nocap-extension-root');
@@ -33,7 +33,14 @@ function injectUI() {
     container.style.zIndex = '9999999';
     container.style.pointerEvents = 'auto';
     const shadowRoot = container.attachShadow({ mode: 'open' }); // Changed to open for better debugging/stability
-    renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'stylesheet';
+    linkEl.href = chrome.runtime.getURL('content.css');
+    shadowRoot.appendChild(linkEl);
+    const uiRoot = document.createElement('div');
+    uiRoot.id = 'nocap-ui-root';
+    shadowRoot.appendChild(uiRoot);
+    renderUI(uiRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
     document.body.appendChild(container);
     startCaptionScraper();
 }
@@ -62,11 +69,11 @@ function startCaptionScraper() {
         activeObserver.observe(player, { childList: true, subtree: true });
     }
 }
-async function runAnalysis(shadowRoot) {
+async function runAnalysis(containerNode) {
     if (isAnalyzing)
         return;
     isAnalyzing = true;
-    renderUI(shadowRoot, isPremiumLocal, null, true);
+    renderUI(containerNode, isPremiumLocal, null, true);
     await new Promise(r => setTimeout(r, 800)); // Wait for captions
     const videoTitle = document.querySelector('h1.ytd-video-primary-info-renderer')?.innerText ||
         document.querySelector('yt-formatted-string.ytd-video-primary-info-renderer')?.innerText ||
@@ -82,7 +89,7 @@ async function runAnalysis(shadowRoot) {
         const finalResult = calculateCredibility(gate.baseScore, 85, 30, gate.reasons || []);
         lastAnalysisResult = finalResult;
         isAnalyzing = false;
-        renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+        renderUI(containerNode, isPremiumLocal, finalResult, false);
         return;
     }
     // 2. Fetch Wikipedia context (Local RAG)
@@ -143,12 +150,12 @@ async function runAnalysis(shadowRoot) {
         (isConspiracy && !isStrongNewsEvidence) ? Math.min(aiFactScore, heuristicRes.factScore) : Math.max(aiFactScore, heuristicRes.factScore), heuristicRes.sourceScore, 30, combinedExternalReasons);
         lastAnalysisResult = finalResult;
         isAnalyzing = false;
-        renderUI(shadowRoot, isPremiumLocal, finalResult, false);
+        renderUI(containerNode, isPremiumLocal, finalResult, false);
     }
     catch (e) {
         console.error('[NOCAP] Analysis error:', e);
         isAnalyzing = false;
-        renderUI(shadowRoot, isPremiumLocal, null, false);
+        renderUI(containerNode, isPremiumLocal, null, false);
     }
 }
 async function analyzeClaimsWithLocalAI(text) {
@@ -226,32 +233,22 @@ function h(tag, props, ...children) {
     });
     return el;
 }
-function renderUI(shadowRoot, isPremium, result, isLoading) {
+function renderUI(containerNode, isPremium, result, isLoading) {
     let score = result?.overallScore || 0;
     let color = score >= 80 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
     if (!result && !isLoading)
         color = '#a1a1aa';
-    while (shadowRoot.firstChild) {
-        shadowRoot.removeChild(shadowRoot.firstChild);
+    while (containerNode.firstChild) {
+        containerNode.removeChild(containerNode.firstChild);
     }
-    const linkEl = h('link', { rel: 'stylesheet', href: chrome.runtime.getURL('content.css') });
-    shadowRoot.appendChild(linkEl);
     const containerDiv = h('div', {
         className: isWidgetCollapsed ? 'nocap-widget collapsed' : 'nocap-widget',
         onClick: () => {
             if (isWidgetCollapsed) {
                 isWidgetCollapsed = false;
-                renderUI(shadowRoot, isPremium, lastAnalysisResult, isAnalyzing);
+                renderUI(containerNode, isPremium, lastAnalysisResult, isAnalyzing);
                 if (!lastAnalysisResult && !isAnalyzing)
-                    runAnalysis(shadowRoot);
-            }
-            else {
-                // Reset state on collapse to prevent carry-over (especially for Shorts/fast navigation)
-                isWidgetCollapsed = true;
-                lastAnalysisResult = null;
-                currentTextBuffer = "";
-                isAnalyzing = false;
-                renderUI(shadowRoot, isPremium, null, false);
+                    runAnalysis(containerNode);
             }
         }
     });
@@ -267,21 +264,15 @@ function renderUI(shadowRoot, isPremium, result, isLoading) {
                 lastAnalysisResult = null;
                 currentTextBuffer = "";
                 isAnalyzing = false;
-                renderUI(shadowRoot, isPremium, null, false);
+                renderUI(containerNode, isPremium, null, false);
             }
         }, '×'), h('div', { className: 'logo' }, 'NOCAP 진위 판독기')), h('button', {
             className: 'toggle-btn',
-            onClick: (e) => {
-                e.stopPropagation();
-                isPremiumLocal = !isPremiumLocal;
-                renderUI(shadowRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
-            }
-        }, isPremium ? 'PRO' : 'BASIC')), h('div', { className: 'score-container' }, h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`), h('div', { className: 'conclusion' }, isLoading ? "판독 중..." : (result?.conclusion || "분석 버튼을 눌러주세요."))), h('div', { className: 'details-section' }, h('div', { className: isPremium ? '' : 'premium-blur' }, h('div', { className: 'details-title' }, '판독 근거'), ...(result?.reasons || []).map(r => h('div', { className: 'reason-item' }, h('span', {}, '📍'), r.text))), 
-        // Restore Premium Overlay with Text
-        !isPremium ? h('div', { className: 'premium-overlay' }, h('div', { className: 'premium-lock-icon' }, '🔒'), h('span', { className: 'premium-text' }, '프리미엄 요금제')) : null), h('div', { className: 'disclaimer-section' }, h('div', { className: 'disclaimer-text' }, "면책공고: 본 결과는 AI 알고리즘에 의해 생성된 참고용 데이터로, 실제 사실과 다를 수 있습니다. 서비스 제공자는 결과의 정확성을 보증하지 않으며, 이용으로 인한 명예훼손 등 모든 법적 책임은 이용자 본인에게 있습니다. 단순 보조 지표로만 활용하십시오.")));
+            onClick: (e) => e.stopPropagation()
+        }, 'FREE')), h('div', { className: 'score-container' }, h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`), h('div', { className: 'conclusion' }, isLoading ? "판독 중..." : (result?.conclusion || "분석 버튼을 눌러주세요."))), h('div', { className: 'details-section' }, h('div', { className: '' }, h('div', { className: 'details-title' }, '판독 근거'), ...(result?.reasons || []).map(r => h('div', { className: 'reason-item' }, h('span', {}, '📍'), r.text)))), h('div', { className: 'disclaimer-section' }, h('div', { className: 'disclaimer-text' }, "면책공고: 본 결과는 AI 알고리즘에 의해 생성된 참고용 데이터로, 실제 사실과 다를 수 있습니다. 서비스 제공자는 결과의 정확성을 보증하지 않으며, 이용으로 인한 명예훼손 등 모든 법적 책임은 이용자 본인에게 있습니다. 단순 보조 지표로만 활용하십시오.")));
         containerDiv.appendChild(mainPanel);
     }
-    shadowRoot.appendChild(containerDiv);
+    containerNode.appendChild(containerDiv);
 }
 // Watchdog: Multi-window and Multi-tab stable
 let lastUrl = window.location.href;
@@ -297,8 +288,11 @@ const watchdog = new MutationObserver(() => {
             isAnalyzing = false;
             isWidgetCollapsed = true; // Always collapse on new video
             const cont = document.getElementById('nocap-extension-root');
-            if (cont && cont.shadowRoot)
-                renderUI(cont.shadowRoot, isPremiumLocal, null, false);
+            if (cont && cont.shadowRoot) {
+                const uiRoot = cont.shadowRoot.getElementById('nocap-ui-root');
+                if (uiRoot)
+                    renderUI(uiRoot, isPremiumLocal, null, false);
+            }
         }
         lastUrl = window.location.href;
     }

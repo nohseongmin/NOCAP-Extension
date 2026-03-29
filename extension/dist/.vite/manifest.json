@@ -1,6 +1,6 @@
 {
   "../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-Cy1HxtAM.js",
+    "file": "assets/crx-manifest.js-D2gwacJo.js",
     "name": "crx-manifest.js",
     "src": "../../../../@crx/manifest",
     "isEntry": true
@@ -12,7 +12,7 @@
     "isEntry": true
   },
   "content.ts": {
-    "file": "assets/content.ts-IK0Egbax.js",
+    "file": "assets/content.ts-Dr8z8gdt.js",
     "name": "content.ts",
     "src": "content.ts",
     "isEntry": true
