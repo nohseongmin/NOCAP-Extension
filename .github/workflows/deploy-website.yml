@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       - name: Install dependencies
         working-directory: ./website
         # 만약 package-lock.json이 확실치 않다면 npm install을 씁니다.
