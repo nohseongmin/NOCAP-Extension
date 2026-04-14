@@ -4,18 +4,42 @@ import { mockAnalyzeCloud, runGatekeeper } from './api';
 
 console.log('NOCAP: Content script loaded (v1.6.0).');
 
-// UI State (Persistent across small DOM changes)
 let isWidgetCollapsed = true;
 let isAnalyzing = false;
 let lastAnalysisResult: AnalysisResult | null = null;
 let currentTextBuffer: string = "";
 let isPremiumLocal = true; // ALL FEATURES FREE NOW
+let nocapEnabled = true;
+
+try {
+  chrome.storage.local.get({ nocapEnabled: true }, (res) => {
+    nocapEnabled = !!res.nocapEnabled;
+  });
+  updateExtensionVisibility();
+  
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.nocapEnabled !== undefined) {
+      nocapEnabled = !!changes.nocapEnabled.newValue;
+      updateExtensionVisibility();
+    }
+  });
+} catch (e) {
+  console.warn("NOCAP: Extension context not available.", e);
+}
+
+function updateExtensionVisibility() {
+  const container = document.getElementById('nocap-extension-root');
+  if (container) {
+    container.style.display = (nocapEnabled && window.location.pathname === '/watch') ? 'block' : 'none';
+  }
+}
+
 
 function injectUI() {
   const isWatchPage = window.location.pathname === '/watch';
   let container = document.getElementById('nocap-extension-root');
 
-  if (!isWatchPage) {
+  if (!isWatchPage || !nocapEnabled) {
     if (container) container.style.display = 'none';
     return;
   }
@@ -342,13 +366,19 @@ const watchdog = new MutationObserver(() => {
     lastUrl = window.location.href;
   }
 
-  if (window.location.pathname === '/watch') {
+  if (window.location.pathname === '/watch' && nocapEnabled) {
     const root = document.getElementById('nocap-extension-root');
     if (!root) {
       injectUI();
     } else if (!document.body.contains(root)) {
       document.body.appendChild(root);
+      root.style.display = 'block';
+    } else {
+      root.style.display = 'block';
     }
+  } else {
+    const root = document.getElementById('nocap-extension-root');
+    if (root) root.style.display = 'none';
   }
 });
 
