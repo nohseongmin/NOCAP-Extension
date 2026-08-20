@@ -12,20 +12,25 @@ let isPremiumLocal = true; // ALL FEATURES FREE NOW
 let nocapEnabled = true;
 
 try {
-  chrome.storage.local.get({ nocapEnabled: true }, (res) => {
-    nocapEnabled = !!res.nocapEnabled;
-  });
-  updateExtensionVisibility();
-  
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.nocapEnabled !== undefined) {
-      nocapEnabled = !!changes.nocapEnabled.newValue;
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get({ nocapEnabled: true }, (res) => {
+      nocapEnabled = !!res?.nocapEnabled;
       updateExtensionVisibility();
-    }
-  });
+    });
+    
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes?.nocapEnabled !== undefined) {
+        nocapEnabled = !!changes.nocapEnabled.newValue;
+        updateExtensionVisibility();
+      }
+    });
+  }
 } catch (e) {
   console.warn("NOCAP: Extension context not available.", e);
 }
+
+// Ensure initial visibility is checked anyway
+updateExtensionVisibility();
 
 function updateExtensionVisibility() {
   const container = document.getElementById('nocap-extension-root');
