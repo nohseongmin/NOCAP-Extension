@@ -1,6 +1,6 @@
 // background.ts - Service worker for the extension
 chrome.runtime.onInstalled.addListener(() => {
-    console.log('NOCAP Extension installed (v1.5.0)!');
+    console.log(`NOCAP Extension installed (v${chrome.runtime.getManifest().version})!`);
 });
 // Currently, content.ts handles the main analysis pipeline to access window.ai locally.
 // This listener remains for proxying CORS requests (Wikipedia RAG) and other needs.
