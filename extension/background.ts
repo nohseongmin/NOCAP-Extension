@@ -3,7 +3,7 @@ import { mockAnalyzeCloud } from './api';
 
 // background.ts - Service worker for the extension
 chrome.runtime.onInstalled.addListener(() => {
-    console.log('NOCAP Extension installed (v1.5.0)!');
+    console.log(`NOCAP Extension installed (v${chrome.runtime.getManifest().version})!`);
 });
 
 // Currently, content.ts handles the main analysis pipeline to access window.ai locally.
