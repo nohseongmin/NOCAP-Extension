@@ -1,7 +1,8 @@
 // content.js - 유튜브 화면에 UI를 주입하는 역할
 import { calculateCredibility } from './scoring';
 import { mockAnalyzeCloud, runGatekeeper } from './api';
-console.log('NOCAP: Content script loaded (v1.6.0).');
+const extVersion = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) ? chrome.runtime.getManifest().version : 'dev';
+console.log(`NOCAP: Content script loaded (v${extVersion}).`);
 let isWidgetCollapsed = true;
 let isAnalyzing = false;
 let lastAnalysisResult = null;

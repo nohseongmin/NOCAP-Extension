@@ -2,7 +2,8 @@
 import { AnalysisResult, calculateCredibility } from './scoring';
 import { mockAnalyzeCloud, runGatekeeper } from './api';
 
-console.log(`NOCAP: Content script loaded (v${chrome.runtime.getManifest().version}).`);
+const extVersion = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) ? chrome.runtime.getManifest().version : 'dev';
+console.log(`NOCAP: Content script loaded (v${extVersion}).`);
 
 let isWidgetCollapsed = true;
 let isAnalyzing = false;
