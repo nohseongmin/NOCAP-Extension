@@ -9,7 +9,6 @@ let isWidgetCollapsed = true;
 let isAnalyzing = false;
 let lastAnalysisResult: AnalysisResult | null = null;
 let currentTextBuffer: string = "";
-let isPremiumLocal = true; // ALL FEATURES FREE NOW
 let nocapEnabled = true;
 
 try {
@@ -79,7 +78,7 @@ function injectUI() {
   uiRoot.id = 'nocap-ui-root';
   shadowRoot.appendChild(uiRoot);
 
-  renderUI(uiRoot, isPremiumLocal, lastAnalysisResult, isAnalyzing);
+  renderUI(uiRoot, lastAnalysisResult, isAnalyzing);
   document.body.appendChild(container);
 
   startCaptionScraper();
@@ -117,7 +116,7 @@ async function runAnalysis(containerNode: HTMLElement) {
   if (isAnalyzing) return;
   
   isAnalyzing = true;
-  renderUI(containerNode, isPremiumLocal, null, true);
+  renderUI(containerNode, null, true);
 
   await new Promise(r => setTimeout(r, 800)); // Wait for captions
 
@@ -137,7 +136,7 @@ async function runAnalysis(containerNode: HTMLElement) {
       const finalResult = calculateCredibility(gate.baseScore, 85, 30, gate.reasons || []);
       lastAnalysisResult = finalResult;
       isAnalyzing = false;
-      renderUI(containerNode, isPremiumLocal, finalResult, false);
+      renderUI(containerNode, finalResult, false);
       return;
   }
 
@@ -208,11 +207,11 @@ async function runAnalysis(containerNode: HTMLElement) {
     
     lastAnalysisResult = finalResult;
     isAnalyzing = false;
-    renderUI(containerNode, isPremiumLocal, finalResult, false);
+    renderUI(containerNode, finalResult, false);
   } catch (e) {
     console.error('[NOCAP] Analysis error:', e);
     isAnalyzing = false;
-    renderUI(containerNode, isPremiumLocal, null, false);
+    renderUI(containerNode, null, false);
   }
 }
 
@@ -282,7 +281,7 @@ function h(tag: string, props: any, ...children: any[]) {
   return el;
 }
 
-function renderUI(containerNode: HTMLElement, isPremium: boolean, result: AnalysisResult | null, isLoading: boolean) {
+function renderUI(containerNode: HTMLElement, result: AnalysisResult | null, isLoading: boolean) {
   let score = result?.overallScore || 0;
   let color = score >= 80 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
   if (!result && !isLoading) color = '#a1a1aa';
@@ -296,7 +295,7 @@ function renderUI(containerNode: HTMLElement, isPremium: boolean, result: Analys
     onClick: () => {
       if (isWidgetCollapsed) {
         isWidgetCollapsed = false;
-        renderUI(containerNode, isPremium, lastAnalysisResult, isAnalyzing);
+        renderUI(containerNode, lastAnalysisResult, isAnalyzing);
         if (!lastAnalysisResult && !isAnalyzing) runAnalysis(containerNode);
       }
     }
@@ -318,15 +317,11 @@ function renderUI(containerNode: HTMLElement, isPremium: boolean, result: Analys
               lastAnalysisResult = null;
               currentTextBuffer = "";
               isAnalyzing = false;
-              renderUI(containerNode, isPremium, null, false);
+              renderUI(containerNode, null, false);
             }
           }, '×'),
           h('div', { className: 'logo' }, 'NOCAP 진위 판독기')
-        ),
-        h('button', { 
-            className: 'toggle-btn',
-            onClick: (e: Event) => e.stopPropagation()
-        }, 'FREE')
+        )
       ),
       h('div', { className: 'score-container' },
         h('div', { className: 'score-circle', style: `--score: ${score}%; --color: ${color}` }, isLoading ? '...' : `${score}%`),
@@ -366,7 +361,7 @@ const watchdog = new MutationObserver(() => {
       const cont = document.getElementById('nocap-extension-root');
       if (cont && cont.shadowRoot) {
         const uiRoot = cont.shadowRoot.getElementById('nocap-ui-root');
-        if (uiRoot) renderUI(uiRoot as HTMLElement, isPremiumLocal, null, false);
+        if (uiRoot) renderUI(uiRoot as HTMLElement, null, false);
       }
     }
     lastUrl = window.location.href;
