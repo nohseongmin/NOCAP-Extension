@@ -1,5 +1,8 @@
 const powerToggle = document.getElementById('powerToggle') as HTMLInputElement;
 const statusText = document.getElementById('statusText');
+const versionText = document.getElementById('versionText');
+
+if (versionText) versionText.textContent = `v${chrome.runtime.getManifest().version}`;
 
 // Load state
 chrome.storage.local.get({ nocapEnabled: true }, (result) => {
