@@ -21,7 +21,7 @@ try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes?.nocapEnabled !== undefined) {
         nocapEnabled = !!changes.nocapEnabled.newValue;
-        updateExtensionVisibility();
+        injectUI();
       }
     });
   }
