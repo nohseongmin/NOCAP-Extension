@@ -159,8 +159,11 @@ async function runAnalysis(containerNode: HTMLElement) {
           const caps = await ai.summarizer.capabilities();
           if (caps.available !== 'no') {
               const summarizer = await ai.summarizer.create();
-              summarizedText = await summarizer.summarize(textToAnalyze);
-              summarizer.destroy();
+              try {
+                  summarizedText = await summarizer.summarize(textToAnalyze);
+              } finally {
+                  summarizer.destroy();
+              }
               console.log('[NOCAP] Text summarized down to:', summarizedText.length, 'chars');
           }
       } catch (e) {
@@ -236,10 +239,12 @@ async function analyzeClaimsWithLocalAI(text: string): Promise<number> {
       const caps = await ai.languageModel.capabilities();
       if (caps.available === 'no') return 85;
       const session = await ai.languageModel.create();
-      const res = await session.prompt(prompt);
-      const score = parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
-      session.destroy();
-      return score;
+      try {
+        const res = await session.prompt(prompt);
+        return parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
+      } finally {
+        session.destroy();
+      }
     } catch (e) { console.error("New AI API failure:", e); }
   }
 
