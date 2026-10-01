@@ -7,6 +7,7 @@ console.log(`NOCAP: Content script loaded (v${extVersion}).`);
 
 let isWidgetCollapsed = true;
 let isAnalyzing = false;
+let analysisRunId = 0;
 let lastAnalysisResult: AnalysisResult | null = null;
 let currentTextBuffer: string = "";
 let nocapEnabled = true;
@@ -114,7 +115,8 @@ function startCaptionScraper() {
 
 async function runAnalysis(containerNode: HTMLElement) {
   if (isAnalyzing) return;
-  
+
+  const runId = ++analysisRunId;
   isAnalyzing = true;
   renderUI(containerNode, null, true);
 
@@ -134,6 +136,7 @@ async function runAnalysis(containerNode: HTMLElement) {
       console.log('[NOCAP] Gatekeeper: Clean content detected. Skipping intensive AI.');
       // Give a highly credible score directly without touching Gemini Nano
       const finalResult = calculateCredibility(gate.baseScore, 85, 30, gate.reasons || []);
+      if (runId !== analysisRunId) return;
       lastAnalysisResult = finalResult;
       isAnalyzing = false;
       renderUI(containerNode, finalResult, false);
@@ -207,11 +210,13 @@ async function runAnalysis(containerNode: HTMLElement) {
       30,
       combinedExternalReasons
     );
-    
+
+    if (runId !== analysisRunId) return;
     lastAnalysisResult = finalResult;
     isAnalyzing = false;
     renderUI(containerNode, finalResult, false);
   } catch (e) {
+    if (runId !== analysisRunId) return;
     console.error('[NOCAP] Analysis error:', e);
     isAnalyzing = false;
     renderUI(containerNode, null, false);
@@ -321,6 +326,7 @@ function renderUI(containerNode: HTMLElement, result: AnalysisResult | null, isL
               // Also reset on close button
               lastAnalysisResult = null;
               currentTextBuffer = "";
+              analysisRunId += 1;
               isAnalyzing = false;
               renderUI(containerNode, null, false);
             }
@@ -361,6 +367,7 @@ const watchdog = new MutationObserver(() => {
       console.log('NOCAP: Navigation detected, resetting state.');
       lastAnalysisResult = null;
       currentTextBuffer = "";
+      analysisRunId += 1;
       isAnalyzing = false;
       isWidgetCollapsed = true; // Always collapse on new video
       const cont = document.getElementById('nocap-extension-root');
