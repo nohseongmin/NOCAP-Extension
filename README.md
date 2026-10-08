@@ -1,25 +1,24 @@
-# NOCAP: 유튜브 가짜뉴스 판별 확장 프로그램 (v1.3)
+# NOCAP
 
-## 💡 현재 상황 (Current Status, v1.3)
-현재 NOCAP은 외부 서버 없이 **100% 온디바이스(크롬 내장 브라우저 환경)** 에서 구동되는 초경량 팩트체크 엔진의 기능 완성판(v1.3)으로 업데이트 되었습니다.
+A Chrome extension that analyzes YouTube captions and displays a credibility widget. Version 1.3 adds a settings popup and a browser-wide toggle for the widget.
 
-* **확장 프로그램 설정 패널 (v1.3 신규)**: 익스텐션 아이콘 클릭 시 다크 글래스모피즘 기반의 직관적인 제어 팝업이 나타납니다. 웹사이트 이동 및 앱 평가 기능을 제공합니다.
-* **실시간 판독기 ON/OFF 동기화 (v1.3 신규)**: 팝업 패널 내 토글 스위치를 통해 영상의 팩트체크 위젯을 즉시 끄거나 켤 수 있으며, 그 상태를 Storage API를 통해 브라우저 전체에 동기화합니다.
-* **최적화된 인터페이스 UI/UX (v1.2)**: 기존의 FOUC(디자인 없는 텍스트 깜빡임) 현상과 페이지 이동 시의 버그를 완벽히 해결한 안정적인 팝업 위젯. (드래그 시 닫힘 버그 해결 포함)
-* **프리미엄 공식 웹사이트 및 무료 자동 배포 (v1.2)**: GitHub Actions와 GitHub Pages 체계를 활용하여 사이버 다크/해커 테마 기반의 랜딩 웹사이트를 구축하고 유지비 0원으로 무제한 자동 호스팅 파이프라인 연동.
-* **완전 무료화 적용 완료 (v1.2)**: 불필요했던 유료/프리미엄 과금 모델(BM)과 자물쇠 UI를 완전히 철거하고, 100% 모든 과정을 투명하게 공개하는 공공 기술로 릴리즈.
-* **실시간 자막 추출**: 유튜브 화면 내 자막 텍스트 실시간 파싱 완료 (API Key 불필요)
-* **2단계 Gatekeeper 필터링**: '뮤직비디오', '게임', '예고편' 감지 시 즉각 AI 스킵 및 패스 (배터리 및 리소스 소모 획기적 절감)
-* **로컬 Veto(거부권) 시스템**: 수백 개의 사이비/음모론 키워드 자체 내장. 포착 즉시 AI 결과와 무관하게 페널티 및 강제 신뢰도 강등 구현 완료
-* **환각 방지 (위키백과 RAG)**: Service Worker 백그라운드를 통해 위키백과 데이터 Fetch 후 프롬프트에 주입하여, 오정보 환각 완벽 차단
+## Current implementation
 
-## 🔮 향후 계획 (Future Plans)
-현재의 텍스트·맥락 기반 기술을 넘어서, 더욱 입체적이고 완벽한 팩트체크 능력을 갖추기 위해 다음 파이프라인 개발을 준비 중입니다.
+- Extract captions from the YouTube page without an API key.
+- Skip analysis for detected music videos, games, and trailers.
+- Apply keyword-based penalties for selected conspiracy or pseudoscience terms.
+- Fetch Wikipedia context through the service worker and add it to the analysis prompt.
+- Run model inference in the browser.
+- Synchronize the enabled state through the Storage API.
+- Provide a popup with website and rating links.
+- Publish a free landing page through GitHub Actions and GitHub Pages.
 
-* **딥페이크(Visual) 시각 분석 엔진 엣지(Edge) 도입**
-   - HTML5 `<canvas>`를 통해 영상 프레임을 실시간 분할 취득
-   - WebGL/WebGPU를 지원하는 초경량 ONNX 모델을 로컬 메모리로 올려, 눈 깜빡임 부자연스러움 등 딥페이크 여부를 서버 전송 없이 판단하는 컴퓨터 비전(CV) 모델 탑재
-* **채널 평판 점수 교차 검증 시스템 고도화**
-   - 유튜버의 과거 허위 콘텐츠 유포 이력 및 채널 공신력을 분산 평판 시스템으로 누적 집계하여 AI 분석의 가중치로 적용
-* **멀티 플랫폼 확장 지원**
-   - 현재 구글 크롬(Chrome) 종속적인 구조에서 벗어나, 네이버 웨일(Whale), 엣지(Edge) 등 크로미움(Chromium) 전 브라우저 환경으로 패키징 및 확장성 부여
+The model runs locally, but Wikipedia context retrieval makes network requests. Retrieved context and keyword checks do not guarantee that an analysis is correct.
+
+Version 1.2 addressed unstyled widget flashes, navigation issues, and closing behavior during dragging. The paid-feature interface was removed.
+
+## Planned work
+
+- Extract video frames with canvas and evaluate lightweight ONNX models through WebGL or WebGPU for possible deepfake detection.
+- Incorporate channel reputation into analysis.
+- Package the extension for other Chromium browsers, including Edge and Whale.
