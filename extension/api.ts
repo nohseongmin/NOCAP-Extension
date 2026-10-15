@@ -24,7 +24,7 @@ export function runGatekeeper(text: string): { skipAI: boolean, baseScore: numbe
         "게임", "gameplay", "티저", "teaser", "ost", "라이브 밴드", "concert"
     ];
     for (const kw of entertainmentKeywords) {
-        if (textLower.includes(kw)) {
+        if (kw === "ost" ? /\bost\b/.test(textLower) : textLower.includes(kw)) {
             return {
                 skipAI: true,
                 baseScore: 95,
