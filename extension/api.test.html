@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>NOCAP Gatekeeper Regression Check</title>
+</head>
+<body>
+    <pre id="result">확인 중...</pre>
+    <script type="module">
+        import { runGatekeeper } from './api.ts';
+
+        const cases = [
+            { text: 'most flat earth', skipAI: false, baseScore: 0 },
+            { text: 'post flat earth', skipAI: false, baseScore: 0 },
+            { text: 'host flat earth', skipAI: false, baseScore: 0 },
+            { text: 'lost flat earth', skipAI: false, baseScore: 0 },
+            { text: 'ostrich flat earth', skipAI: false, baseScore: 0 },
+            { text: 'post!!!!', skipAI: false, baseScore: 0 },
+            { text: 'most interesting facts', skipAI: true, baseScore: 92 },
+            { text: 'OST', skipAI: true, baseScore: 95 },
+            { text: '[ost]', skipAI: true, baseScore: 95 },
+            { text: '드라마 OST 모음', skipAI: true, baseScore: 95 },
+            { text: 'music video', skipAI: true, baseScore: 95 }
+        ];
+
+        for (const { text, skipAI, baseScore } of cases) {
+            const result = runGatekeeper(text);
+            if (result.skipAI !== skipAI || result.baseScore !== baseScore) {
+                document.getElementById('result').textContent = `실패: ${text}`;
+                throw new Error(`Unexpected gatekeeper result: ${text}`);
+            }
+        }
+
+        document.getElementById('result').textContent = `${cases.length}개 회귀 확인을 통과했습니다.`;
+    </script>
+</body>
+</html>
