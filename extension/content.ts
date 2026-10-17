@@ -320,6 +320,7 @@ function renderUI(containerNode: HTMLElement, result: AnalysisResult | null, isL
         h('div', { className: 'header-left' },
           h('button', {
             className: 'close-btn',
+            'aria-label': '판독기 접기',
             onClick: (e: Event) => {
               e.stopPropagation();
               isWidgetCollapsed = true;
