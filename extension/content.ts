@@ -312,7 +312,11 @@ function renderUI(containerNode: HTMLElement, result: AnalysisResult | null, isL
   });
 
   // Icon always present
-  containerDiv.appendChild(h('div', { className: 'collapsed-icon' }, 'N'));
+  containerDiv.appendChild(h('button', {
+    className: 'collapsed-icon',
+    type: 'button',
+    'aria-label': 'NOCAP 판독기 열기'
+  }, 'N'));
 
   if (!isWidgetCollapsed) {
     const mainPanel = h('div', { className: 'main-panel' },
