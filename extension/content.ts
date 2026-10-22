@@ -257,8 +257,12 @@ async function analyzeClaimsWithLocalAI(text: string): Promise<number> {
   if (ai.asTextSession) {
     try {
       const session = await ai.asTextSession();
-      const res = await session.prompt(prompt);
-      return parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
+      try {
+        const res = await session.prompt(prompt);
+        return parseInt(res.trim().match(/\d+/)?.[0] || "85", 10);
+      } finally {
+        session.destroy();
+      }
     } catch (e) { console.error("Legacy AI API failure:", e); }
   }
 
