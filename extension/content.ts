@@ -10,13 +10,13 @@ let isAnalyzing = false;
 let analysisRunId = 0;
 let lastAnalysisResult: AnalysisResult | null = null;
 let currentTextBuffer: string = "";
-let nocapEnabled = true;
+let nocapEnabled = false;
 
 try {
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get({ nocapEnabled: true }, (res) => {
       nocapEnabled = !!res?.nocapEnabled;
-      updateExtensionVisibility();
+      injectUI();
     });
     
     chrome.storage.onChanged.addListener((changes, area) => {
