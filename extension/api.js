@@ -4,7 +4,7 @@
  * 2. Checks for suspicious keywords or heavy exclamation usage.
  */
 export function runGatekeeper(text) {
-    const textLower = text.toLowerCase();
+    const textLower = text.toLowerCase().replace(/\s+/g, " ");
     // 1. Entertainment pre-filter (Early Pass)
     const entertainmentKeywords = [
         "뮤직비디오", "official video", "music video", "예고편", "trailer",
