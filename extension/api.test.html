@@ -10,6 +10,14 @@
         import { runGatekeeper } from './api.ts';
 
         const cases = [
+            { text: 'flat earth', skipAI: false, baseScore: 0 },
+            { text: 'flat  earth', skipAI: false, baseScore: 0 },
+            { text: 'Flat\tEarth', skipAI: false, baseScore: 0 },
+            { text: 'flat\nearth', skipAI: false, baseScore: 0 },
+            { text: '지구\t평평', skipAI: false, baseScore: 0 },
+            { text: '달 착륙\r\n조작', skipAI: false, baseScore: 0 },
+            { text: 'music\tvideo', skipAI: true, baseScore: 95 },
+            { text: 'ordinary\ninformation', skipAI: true, baseScore: 92 },
             { text: 'most flat earth', skipAI: false, baseScore: 0 },
             { text: 'post flat earth', skipAI: false, baseScore: 0 },
             { text: 'host flat earth', skipAI: false, baseScore: 0 },

@@ -16,7 +16,7 @@ export interface FactCheckResponse {
  * 2. Checks for suspicious keywords or heavy exclamation usage.
  */
 export function runGatekeeper(text: string): { skipAI: boolean, baseScore: number, reasons: Array<{ type: 'fact' | 'penalty' | 'bonus', text: string }> } {
-    const textLower = text.toLowerCase();
+    const textLower = text.toLowerCase().replace(/\s+/g, " ");
 
     // 1. Entertainment pre-filter (Early Pass)
     const entertainmentKeywords = [
