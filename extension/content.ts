@@ -86,9 +86,14 @@ function injectUI() {
 }
 
 let activeObserver: MutationObserver | null = null;
+let observedPlayer: HTMLElement | null = null;
 
 function startCaptionScraper() {
+  const player = document.getElementById('ytd-player');
+  if (player === observedPlayer) return;
   if (activeObserver) activeObserver.disconnect();
+  observedPlayer = player;
+  if (!player) return;
   
   activeObserver = new MutationObserver((mutations) => {
     for (let m of mutations) {
@@ -107,10 +112,7 @@ function startCaptionScraper() {
     }
   });
 
-  const player = document.getElementById('ytd-player');
-  if (player) {
-    activeObserver.observe(player, { childList: true, subtree: true });
-  }
+  activeObserver.observe(player, { childList: true, subtree: true });
 }
 
 async function runAnalysis(containerNode: HTMLElement) {
@@ -389,6 +391,7 @@ const watchdog = new MutationObserver(() => {
   }
 
   if (window.location.pathname === '/watch' && nocapEnabled) {
+    startCaptionScraper();
     const root = document.getElementById('nocap-extension-root');
     if (!root) {
       injectUI();

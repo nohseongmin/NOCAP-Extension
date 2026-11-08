@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>NOCAP Caption Observer Regression Check</title>
+</head>
+<body>
+    <pre id="result">확인 중...</pre>
+    <script type="module">
+        const stylesheetUrl = new URL('./content.css', import.meta.url).href;
+        const originalSetTimeout = window.setTimeout.bind(window);
+        const originalUrl = window.location.href;
+        const originalChrome = window.chrome;
+        const originalAI = window.ai;
+        const flush = () => new Promise(resolve => originalSetTimeout(resolve, 0));
+
+        try {
+            history.replaceState(null, '', '/watch?v=caption-check');
+            document.title = 'ordinary information - YouTube';
+            window.chrome = {
+                runtime: {
+                    getManifest: () => ({ version: 'test' }),
+                    getURL: () => stylesheetUrl,
+                    sendMessage: (message, callback) => callback({ result: null })
+                },
+                storage: {
+                    local: {
+                        get: (defaults, callback) => queueMicrotask(() => callback({ nocapEnabled: true }))
+                    },
+                    onChanged: { addListener: () => {} }
+                }
+            };
+            window.ai = undefined;
+            // Run the caption wait without depending on elapsed wall-clock time.
+            window.setTimeout = callback => {
+                queueMicrotask(callback);
+                return 0;
+            };
+
+            await import('./content.ts');
+            await flush();
+
+            for (const scenario of ['플레이어 지연 생성', '플레이어 교체']) {
+                const player = document.createElement('div');
+                player.id = 'ytd-player';
+                const previousPlayer = document.getElementById('ytd-player');
+                if (previousPlayer) previousPlayer.replaceWith(player);
+                else document.body.appendChild(player);
+                await flush();
+
+                const caption = document.createElement('span');
+                caption.className = 'ytp-caption-segment';
+                caption.textContent = 'flat earth';
+                player.appendChild(caption);
+                await flush();
+
+                const ui = document.getElementById('nocap-extension-root').shadowRoot;
+                ui.querySelector('.collapsed-icon').click();
+                await flush();
+                if (!ui.querySelector('.details-section').textContent.includes('[flat earth]')) {
+                    throw new Error(`${scenario}: 자막이 분석에 반영되지 않았습니다.`);
+                }
+                ui.querySelector('.close-btn').click();
+                await flush();
+            }
+
+            document.getElementById('result').textContent = '2개 회귀 확인을 통과했습니다.';
+        } catch (error) {
+            document.getElementById('result').textContent = `실패: ${error.message}`;
+            throw error;
+        } finally {
+            window.setTimeout = originalSetTimeout;
+            window.chrome = originalChrome;
+            window.ai = originalAI;
+            history.replaceState(null, '', originalUrl);
+        }
+    </script>
+</body>
+</html>
