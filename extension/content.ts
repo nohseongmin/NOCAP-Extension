@@ -1,5 +1,5 @@
 // content.js - 유튜브 화면에 UI를 주입하는 역할
-import { AnalysisResult, calculateCredibility } from './scoring';
+import { type AnalysisResult, calculateCredibility } from './scoring';
 import { mockAnalyzeCloud, runGatekeeper } from './api';
 
 const extVersion = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) ? chrome.runtime.getManifest().version : 'dev';
@@ -97,7 +97,7 @@ function startCaptionScraper() {
   
   activeObserver = new MutationObserver((mutations) => {
     for (let m of mutations) {
-      if (m.type === 'childList') {
+      if (m.type === 'childList' || m.type === 'characterData') {
         const captionElements = document.querySelectorAll('.ytp-caption-segment');
         if (captionElements.length > 0) {
           const text = Array.from(captionElements).map(el => (el as HTMLElement).innerText).join(' ');
@@ -112,7 +112,7 @@ function startCaptionScraper() {
     }
   });
 
-  activeObserver.observe(player, { childList: true, subtree: true });
+  activeObserver.observe(player, { childList: true, characterData: true, subtree: true });
 }
 
 async function runAnalysis(containerNode: HTMLElement) {
