@@ -5,7 +5,7 @@
     <title>NOCAP Caption Observer Regression Check</title>
 </head>
 <body>
-    <pre id="result">확인 중...</pre>
+    <pre id="result" data-status="pending">확인 중...</pre>
     <script type="module">
         const stylesheetUrl = new URL('./content.css', import.meta.url).href;
         const originalSetTimeout = window.setTimeout.bind(window);
@@ -40,7 +40,7 @@
             await import('./content.ts');
             await flush();
 
-            for (const scenario of ['플레이어 지연 생성', '플레이어 교체']) {
+            for (const scenario of ['플레이어 지연 생성', '플레이어 교체', '자막 텍스트 노드 갱신']) {
                 const player = document.createElement('div');
                 player.id = 'ytd-player';
                 const previousPlayer = document.getElementById('ytd-player');
@@ -50,9 +50,14 @@
 
                 const caption = document.createElement('span');
                 caption.className = 'ytp-caption-segment';
-                caption.textContent = 'flat earth';
+                caption.textContent = scenario === '자막 텍스트 노드 갱신' ? 'ordinary information' : 'flat earth';
                 player.appendChild(caption);
                 await flush();
+
+                if (scenario === '자막 텍스트 노드 갱신') {
+                    caption.firstChild.data = 'flat earth';
+                    await flush();
+                }
 
                 const ui = document.getElementById('nocap-extension-root').shadowRoot;
                 ui.querySelector('.collapsed-icon').click();
@@ -64,9 +69,11 @@
                 await flush();
             }
 
-            document.getElementById('result').textContent = '2개 회귀 확인을 통과했습니다.';
+            document.getElementById('result').textContent = '3개 회귀 확인을 통과했습니다.';
+            document.getElementById('result').dataset.status = 'passed';
         } catch (error) {
             document.getElementById('result').textContent = `실패: ${error.message}`;
+            document.getElementById('result').dataset.status = 'failed';
             throw error;
         } finally {
             window.setTimeout = originalSetTimeout;
